@@ -5,7 +5,8 @@
   "main": "truffle-config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate": "rm -rf ./build && truffle compile && truffle migrate --network ropsten"
+    "truffle:testent": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
+    "truffle:dev": "rm -rf ./build && truffle compile && truffle migrate --network development"
   },
   "repository": {
     "type": "git",
