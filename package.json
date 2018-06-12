@@ -13,7 +13,7 @@
     "start-dev": "NODE_ENV=development webpack-dev-server --config=configs/webpack/dev.js",
     "start-prod": "npm run build && node express.js",
     "test": "truffle test",
-    "truffle:testent": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
+    "truffle:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
     "truffle:dev": "rm -rf ./build && truffle compile && truffle migrate --network development"
   },
   "repository": {
