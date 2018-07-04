@@ -22,9 +22,7 @@
     "truffle": "4.1.11"
   },
   "dependencies": {
-    "truffle-contract": "^3.0.5",
-    "truffle-hdwallet-provider": "^0.0.5",
-    "zeppelin-solidity": "1.10.0"
+    "truffle-hdwallet-provider": "^0.0.5"
   },
   "postcss": {}
 }
