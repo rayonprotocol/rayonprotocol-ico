@@ -60,21 +60,21 @@ contract TransferLimitedToken is StandardToken, Haltable {
     /**
      * @dev Override transfer function. Add canTransfer modifier to check possibility of transferring
      */
-    function transfer(address _to, uint256 _value) public canTransfer(msg.sender, _to) returns (bool) {
+    function transfer(address _to, uint256 _value) public stopInEmergency canTransfer(msg.sender, _to) returns (bool) {
         return super.transfer(_to, _value);
     }
 
     /**
      * @dev Override transferFrom function. Add canTransfer modifier to check possibility of transferring
      */
-    function transferFrom(address _from, address _to, uint256 _value) public canTransfer(_from, _to) returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public stopInEmergency canTransfer(_from, _to) returns (bool) {
         return super.transferFrom(_from, _to, _value);
     }
 
     /**
      * @dev Override approve function. Add canTransfer modifier to check possibility of transferring
      */
-    function approve(address _spender, uint256 _value) public canTransfer(msg.sender, _spender) returns (bool) {
+    function approve(address _spender, uint256 _value) public stopInEmergency canTransfer(msg.sender, _spender) returns (bool) {
         return super.approve(_spender,_value);
     }
 }
