@@ -4,8 +4,9 @@
   "description": "This is RayonProtocol's ICO [Smart Contracts](https://en.wikipedia.org/wiki/Smart_contract) on Ethereum, based on [OpenZeppelin](https://github.com/OpenZeppelin/)",
   "main": "truffle-config.js",
   "scripts": {
-    "truffle:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
-    "truffle:dev": "rm -rf ./build && truffle compile && truffle migrate --network development"
+    "test": "truffle test",
+    "migrate:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
+    "migrate:dev": "rm -rf ./build && truffle compile && truffle migrate --network development"
   },
   "repository": {
     "type": "git",
