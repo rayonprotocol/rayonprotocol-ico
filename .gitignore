@@ -6,3 +6,6 @@ tests/__coverage__/
 tests/**/*.jsx
 package-lock.json
 build/
+coverage
+coverage.json
+coverageEnv
