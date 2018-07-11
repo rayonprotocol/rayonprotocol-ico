@@ -1,3 +1,5 @@
+const assert = require('chai').assert;
+
 module.exports = async function(promise) {
   try {
     await promise;

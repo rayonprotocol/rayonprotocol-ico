@@ -4,9 +4,13 @@
   "description": "This is RayonProtocol's ICO [Smart Contracts](https://en.wikipedia.org/wiki/Smart_contract) on Ethereum, based on [OpenZeppelin](https://github.com/OpenZeppelin/)",
   "main": "truffle-config.js",
   "scripts": {
-    "test": "truffle test",
     "migrate:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
-    "migrate:dev": "rm -rf ./build && truffle compile && truffle migrate --network development"
+    "migrate:dev": "rm -rf ./build && truffle compile && truffle migrate --network development",
+    "lint": "solium -d .",
+    "test": "TRUFFLE_TEST=true npm run ganache-cli:dev",
+    "test:gas": "GAS_REPORTER=true npm test",
+    "coverage": "SOLIDITY_COVERAGE=true npm run ganache-cli:dev",
+    "ganache-cli:dev": "./ganache-cli.sh"
   },
   "repository": {
     "type": "git",
@@ -20,9 +24,15 @@
   },
   "homepage": "https://github.com/rayonprotocol/rayonprotocol-ico#readme",
   "devDependencies": {
-    "truffle": "4.1.11"
-  },
-  "dependencies": {
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "chai-bignumber": "^2.0.2",
+    "coveralls": "^3.0.2",
+    "eth-gas-reporter": "^0.1.9",
+    "ganache-cli": "^6.1.6",
+    "solidity-coverage": "^0.5.5",
+    "solium": "^1.1.8",
+    "truffle": "4.1.11",
     "truffle-hdwallet-provider": "^0.0.5"
   },
   "postcss": {}
