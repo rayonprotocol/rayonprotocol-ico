@@ -8,6 +8,7 @@ pragma solidity ^0.4.6;
 
 import "../ownership/Ownable.sol";
 
+
 /*
  * Haltable
  *
@@ -18,31 +19,34 @@ import "../ownership/Ownable.sol";
  * Originally envisioned in FirstBlood ICO contract.
  */
 contract Haltable is Ownable {
-  bool public halted;
+    bool public halted;
 
-  modifier stopInEmergency {
-    if (halted) throw;
-    _;
-  }
+    modifier stopInEmergency {
+        if (halted)
+            revert();
+        _;
+    }
 
-  modifier stopNonOwnersInEmergency {
-    if (halted && msg.sender != owner) throw;
-    _;
-  }
+    modifier stopNonOwnersInEmergency {
+        if (halted && msg.sender != owner)
+            revert();
+        _;
+    }
 
-  modifier onlyInEmergency {
-    if (!halted) throw;
-    _;
-  }
+    modifier onlyInEmergency {
+        if (!halted)
+            revert();
+        _;
+    }
 
-  // called by the owner on emergency, triggers stopped state
-  function halt() external onlyOwner {
-    halted = true;
-  }
+    // called by the owner on emergency, triggers stopped state
+    function halt() external onlyOwner {
+        halted = true;
+    }
 
-  // called by the owner on end of emergency, returns to normal state
-  function unhalt() external onlyOwner onlyInEmergency {
-    halted = false;
-  }
+    // called by the owner on end of emergency, returns to normal state
+    function unhalt() external onlyOwner onlyInEmergency {
+        halted = false;
+    }
 
 }

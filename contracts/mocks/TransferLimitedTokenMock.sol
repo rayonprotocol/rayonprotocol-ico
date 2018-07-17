@@ -1,6 +1,8 @@
 pragma solidity ^0.4.21;
 
 import "../token/TransferLimitedToken.sol";
+
+
 /**
  * @title TransferLimitedTokenMock
  * @dev Mocking contract of TransferLimitedToken
