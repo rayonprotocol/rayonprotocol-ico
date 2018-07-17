@@ -1,7 +1,7 @@
 pragma solidity ^0.4.21;
 
 import "./StandardToken.sol";
-import "./Haltable.sol";
+import "../lifecycle/Pausable.sol";
 import "../ownership/Ownable.sol";
 
 
@@ -9,7 +9,7 @@ import "../ownership/Ownable.sol";
  * @title TransferLimitedToken
  * @dev Token with ability to limit transfers within wallets included in limitedWallets list for certain period of time
  */
-contract TransferLimitedToken is StandardToken, Haltable {
+contract TransferLimitedToken is StandardToken, Pausable {
 
     mapping(address => bool) public limitedWallets;
     bool public isLimitEnabled = false;
@@ -62,21 +62,21 @@ contract TransferLimitedToken is StandardToken, Haltable {
     /**
      * @dev Override transfer function. Add canTransfer modifier to check possibility of transferring
      */
-    function transfer(address _to, uint256 _value) public stopInEmergency canTransfer(msg.sender, _to) returns (bool) {
+    function transfer(address _to, uint256 _value) public whenNotPaused canTransfer(msg.sender, _to) returns (bool) {
         return super.transfer(_to, _value);
     }
 
     /**
      * @dev Override transferFrom function. Add canTransfer modifier to check possibility of transferring
      */
-    function transferFrom(address _from, address _to, uint256 _value) public stopInEmergency canTransfer(_from, _to) returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused canTransfer(_from, _to) returns (bool) {
         return super.transferFrom(_from, _to, _value);
     }
 
     /**
      * @dev Override approve function. Add canTransfer modifier to check possibility of transferring
      */
-    function approve(address _spender, uint256 _value) public stopInEmergency canTransfer(msg.sender, _spender) returns (bool) {
+    function approve(address _spender, uint256 _value) public whenNotPaused canTransfer(msg.sender, _spender) returns (bool) {
         return super.approve(_spender,_value);
     }
 }

@@ -110,7 +110,7 @@ contract('TransferLimitedToken', function(accounts) {
       this.token.mockSetBalance(limitedWalletAddress, initialBalance, { from: owner });
     })
 
-    context('when token is unhalted', async () => {
+    context('when token is not paused', async () => {
 
       context('when limit is disabled', async () => {
 
@@ -163,10 +163,10 @@ contract('TransferLimitedToken', function(accounts) {
 
     });
 
-    context('when token is halted', async () => {
+    context('when token is paused', async () => {
 
       beforeEach(async () => {
-        await this.token.halt({ from: owner });
+        await this.token.pause({ from: owner });
       });
 
       it('reverts', async () => {
