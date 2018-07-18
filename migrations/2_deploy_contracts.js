@@ -1,18 +1,17 @@
-const RayonTokenCrowdsale = artifacts.require('./RayonTokenCrowdsale.sol');
-const RayonToken = artifacts.require('./RayonToken.sol');
+const RayonTokenCrowdsale = artifacts.require('RayonTokenCrowdsale.sol');
+const RayonToken = artifacts.require('RayonToken.sol');
+const BigNumber = web3.BigNumber;
 
-module.exports = function(deployer, network, accounts) {
-  return deployer
-    .then(() => {
-      return deployer.deploy(RayonToken);
-    })
-    .then(() => {
-      const startTime = Math.round(new Date(Date.now() + 200000).getTime() / 1000);
-      const endTime = Math.round((new Date().getTime() + 86400000 * 20) / 1000); // Today + 20 days
-      console.log('startTime', startTime);
-      const rate = 5;
-      // const wallet = accounts[0];
-      const wallet = '0x6EB16b36dAA3D123b553fcB25d723105a77aD7c6';
-      return deployer.deploy(RayonTokenCrowdsale, startTime, endTime, rate, wallet, RayonToken.address);
-    });
+module.exports = async function (deployer, network, accounts) {
+  await deployer.deploy(RayonToken);
+
+  // these arguments are only used for development thus does not reflect whitepaper
+  const openingTime = Math.round(new Date(Date.now() + 200000).getTime() / 1000);
+  const closingTime = Math.round((new Date().getTime() + 86400000 * 20) / 1000); // Today + 20 days
+  const rate = 500;
+  const [wallet] = accounts;
+  const cap = new BigNumber(web3.toWei('3000', 'ether'));
+  await deployer.deploy(RayonTokenCrowdsale,
+    rate, wallet, RayonToken.address, cap, openingTime, closingTime
+  );
 };
