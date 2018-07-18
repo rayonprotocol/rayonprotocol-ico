@@ -1,8 +1,8 @@
 pragma solidity ^0.4.23;
 
 import "./RayonToken.sol";
-import "./crowdsale/MintedCrowdsale.sol";
-import "./crowdsale/TimedCrowdsale.sol";
+import "openzeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol";
+import "openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol";
 
 
 contract RayonTokenCrowdsale is TimedCrowdsale, MintedCrowdsale {

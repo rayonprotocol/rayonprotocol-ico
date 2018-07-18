@@ -1,8 +1,8 @@
 pragma solidity ^0.4.21;
 
-import "./StandardToken.sol";
-import "../lifecycle/Pausable.sol";
-import "../ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
 /**

@@ -1,8 +1,8 @@
 
 pragma solidity ^0.4.23;
 
-import "./token/MintableToken.sol";
-import "./token/BurnableToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "./token/TransferLimitedToken.sol";
 
 
