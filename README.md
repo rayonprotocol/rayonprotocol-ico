@@ -4,8 +4,26 @@ This is RayonProtocol's ICO [Smart Contracts](https://en.wikipedia.org/wiki/Smar
 
 Kindly note that this is a prototype and additional functions with regards to the ICO process will be added.
 
+* [Requirements](https://findainc.atlassian.net/wiki/spaces/BLOC/pages/322240835/23.+Token+ICO)
+
 ### RayonToken
 ![RayonToken](doc/RayonToken.png)
 
 ### RayonTokenCrowdsale
 ![RayonTokenCrowdsale](doc/RayonTokenCrowdsale.png)
+
+### Development
+#### Enviroment variables
+Complete `.env.example` file to set enviroment variables used for truffle configuration
+
+#### Test
+```bash
+# test smart contracts
+yarn test 
+
+# test coverage
+yarn coverage # generate coverage reports
+open coverage/index.html # open reports
+```
+
+See [package.json](package.json) to find out more commands
