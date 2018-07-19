@@ -93,8 +93,8 @@ contract('TransferLimitedToken', function (accounts) {
     });
 
     context('when token is not paused', async function () {
-      context('when limit is disabled', async function () {
-        context('when an address is not limited', async function () {
+      context('and limit is disabled', async function () {
+        context('and an address is not limited', async function () {
           it('transfers tokens', async function () {
             await this.token.transfer(nonOwner, transferValue, { from: owner });
             const balanceAfterSent = await this.token.balanceOf(owner);
@@ -107,12 +107,12 @@ contract('TransferLimitedToken', function (accounts) {
         });
       });
 
-      context('when limit is enabled', async function () {
+      context('and limit is enabled', async function () {
         beforeEach(async function () {
           await this.token.enableLimit({ from: owner });
         });
 
-        context('when an address is limited', async function () {
+        context('and an address is limited', async function () {
           beforeEach(async function () {
             await this.token.addLimitedWalletAddress(limitedWalletAddress, { from: owner });
           });
@@ -137,7 +137,7 @@ contract('TransferLimitedToken', function (accounts) {
       });
     });
 
-    context('when token is paused', async function () {
+    context('and token is paused', async function () {
       beforeEach(async function () {
         await this.token.pause({ from: owner });
       });
@@ -145,6 +145,127 @@ contract('TransferLimitedToken', function (accounts) {
       it('reverts', async function () {
         await this.token.transfer(nonOwner, transferValue, { from: owner }).should.be.rejectedWith(/revert/);
         await this.token.transfer(owner, transferValue, { from: nonOwner }).should.be.rejectedWith(/revert/);
+      });
+    });
+  });
+
+  describe('approve', async function () {
+    beforeEach(async function () {
+      this.token.mockSetBalance(owner, initialBalance, { from: owner });
+      this.token.mockSetBalance(nonOwner, initialBalance, { from: owner });
+      this.token.mockSetBalance(limitedWalletAddress, initialBalance, { from: owner });
+    });
+
+    context('when token is not paused', async function () {
+      context('and limit is disabled', async function () {
+        context('and an address is not limited', async function () {
+          it('approves token transfer to spender', async function () {
+            await this.token.approve(nonOwner, transferValue, { from: owner }).should.be.fulfilled;
+          });
+        });
+
+        context('and limit is enabled', async function () {
+          beforeEach(async function () {
+            await this.token.enableLimit({ from: owner });
+          });
+
+          context('and an address is limited', async function () {
+            beforeEach(async function () {
+              await this.token.addLimitedWalletAddress(limitedWalletAddress, { from: owner });
+            });
+
+            it('approves non-limited accounts', async function () {
+              await this.token.approve(nonOwner, transferValue, { from: owner }).should.be.fulfilled;
+              await this.token.approve(owner, transferValue, { from: nonOwner }).should.be.fulfilled;
+            });
+
+            it('can not approve non-limited accounts', async function () {
+              await this.token.approve(nonOwner, transferValue, { from: limitedWalletAddress })
+                .should.be.rejectedWith(/revert/);
+
+              await this.token.approve(limitedWalletAddress, transferValue, { from: nonOwner })
+                .should.be.rejectedWith(/revert/);
+            });
+          });
+        });
+      });
+    });
+
+    context('when token is paused', async function () {
+      beforeEach(async function () {
+        await this.token.pause({ from: owner });
+      });
+
+      it('reverts', async function () {
+        await this.token.approve(nonOwner, transferValue, { from: owner })
+          .should.be.rejectedWith(/revert/);
+      });
+    });
+  });
+
+  describe('transferFrom', async function () {
+    beforeEach(async function () {
+      this.token.mockSetBalance(owner, initialBalance, { from: owner });
+      this.token.mockSetBalance(nonOwner, initialBalance, { from: owner });
+      this.token.mockSetBalance(limitedWalletAddress, initialBalance, { from: owner });
+      await this.token.approve(nonOwner, transferValue, { from: owner });
+      await this.token.approve(limitedWalletAddress, transferValue, { from: owner });
+    });
+
+    context('when token is not paused', async function () {
+      context('and limit is disabled', async function () {
+        context('and an address is not limited', async function () {
+          it('transfers tokens from spender', async function () {
+            await this.token.transferFrom(owner, nonOwner, transferValue, { from: nonOwner });
+
+            const senderBalance = await this.token.balanceOf(owner);
+            senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
+
+            const recipientBalance = await this.token.balanceOf(nonOwner);
+            recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
+          });
+        });
+      });
+
+      context('and limit is enabled', async function () {
+        beforeEach(async function () {
+          await this.token.enableLimit({ from: owner });
+        });
+
+        context('and an address is limited', async function () {
+          beforeEach(async function () {
+            await this.token.addLimitedWalletAddress(limitedWalletAddress, { from: owner });
+          });
+
+          it('transfers tokens between non-limited accounts', async function () {
+            await this.token.transferFrom(owner, nonOwner, transferValue, { from: nonOwner });
+
+            const senderBalance = await this.token.balanceOf(owner);
+            senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
+
+            const recipientBalance = await this.token.balanceOf(nonOwner);
+            recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
+          });
+
+          it('can not transfer tokens between non-limited accounts', async function () {
+            await this.token.transferFrom(owner, limitedWalletAddress, transferValue, { from: limitedWalletAddress })
+              .should.be.rejectedWith(/revert/);
+
+            await this.token.transferFrom(owner, limitedWalletAddress, transferValue, { from: nonOwner })
+              .should.be.rejectedWith(/revert/);
+          });
+        });
+      });
+    });
+
+    context('when token is paused', async function () {
+      beforeEach(async function () {
+        await this.token.pause({ from: owner });
+      });
+
+      it('reverts', async function () {
+        await this.token.transferFrom(owner, nonOwner, transferValue, { from: nonOwner })
+          .should.be.rejectedWith(/revert/);
       });
     });
   });
