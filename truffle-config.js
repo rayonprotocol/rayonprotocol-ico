@@ -1,23 +1,18 @@
 require('babel-register');
 require('babel-polyfill');
+require('dotenv').config();
 
 const HDWalletProvider = require('truffle-hdwallet-provider');
-
-const providerWithMnemonic = (
-  mnemonic,
+const getProvider = (
   providerUrl,
   addressIndex = 0,
   numAddresses = 5
 ) => !process.env.SOLIDITY_COVERAGE
-  ? new HDWalletProvider(mnemonic, providerUrl, addressIndex, numAddresses)
+  ? new HDWalletProvider(process.env.MNEMONIC, providerUrl, addressIndex, numAddresses)
   : undefined; // https://github.com/sc-forks/solidity-coverage/blob/master/docs/faq.md#using-alongside-hdwalletprovider
 
-const devMnemonic = 'rhythm vicious awful truck hint boring scale debris embark forest decline salad';
-const devProvider = providerWithMnemonic(devMnemonic, 'http://localhost:8545');
-
-const infuraApiKey = 'JIA5eiNFvLhAStdxeTvb'; // Either use this key or get yours at https://infura.io/signup. It's free.
-const testnetMnemonic = 'zoo you win van use two sun rib pig own now ten';
-const testnetProvider = providerWithMnemonic(testnetMnemonic, `https://ropsten.infura.io/${infuraApiKey}`);
+const devProvider = getProvider('http://localhost:8545');
+const testnetProvider = getProvider(`https://ropsten.infura.io/${process.env.INFURA_API_KEY}`);
 
 const mocha = process.env.GAS_REPORTER
   ? {
