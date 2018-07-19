@@ -6,7 +6,8 @@
   "scripts": {
     "migrate:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
     "migrate:dev": "rm -rf ./build && truffle compile && truffle migrate --network development",
-    "lint": "solium -d .",
+    "lint": "eslint .",
+    "lint:sol": "solium -d .",
     "test": "TRUFFLE_TEST=true npm run ganache-cli:dev",
     "test:gas": "GAS_REPORTER=true npm test",
     "coverage": "SOLIDITY_COVERAGE=true npm run ganache-cli:dev",
@@ -24,10 +25,20 @@
   },
   "homepage": "https://github.com/rayonprotocol/rayonprotocol-ico#readme",
   "devDependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "chai-bignumber": "^2.0.2",
     "coveralls": "^3.0.2",
+    "dotenv": "^6.0.0",
+    "eslint": "^5.1.0",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-node": "^7.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
     "eth-gas-reporter": "^0.1.9",
     "ganache-cli": "^6.1.6",
     "solidity-coverage": "^0.5.5",
@@ -35,5 +46,7 @@
     "truffle": "4.1.11",
     "truffle-hdwallet-provider": "^0.0.5"
   },
-  "postcss": {}
+  "dependencies": {
+    "openzeppelin-solidity": "1.11.0"
+  }
 }
