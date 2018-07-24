@@ -26,4 +26,21 @@ yarn coverage # generate coverage reports
 open coverage/index.html # open reports
 ```
 
+#### Deploy
+```bash
+# deploy to development network
+yarn migrate:dev
+```
+
+#### Verify contracts on Etherscan
+[solidity-flattener](https://github.com/BlockCatIO/solidity-flattener) is required to perform below
+
+```bash
+# flatten contracts
+yarn flatten
+
+# solidity compiler version
+yarn truffle version
+```
+
 See [package.json](package.json) to find out more commands
