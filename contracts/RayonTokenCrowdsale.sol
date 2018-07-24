@@ -1,14 +1,14 @@
 pragma solidity ^0.4.23;
 
-import "./RayonToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
+import "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import "openzeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/WhitelistedCrowdsale.sol";
 
 
-contract RayonTokenCrowdsale is WhitelistedCrowdsale, CappedCrowdsale, TimedCrowdsale, MintedCrowdsale {
+contract RayonTokenCrowdsale is HasNoContracts, WhitelistedCrowdsale, CappedCrowdsale, TimedCrowdsale, MintedCrowdsale {
     constructor(
         // for Crowdsale
         uint256 _rate,
