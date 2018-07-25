@@ -6,6 +6,8 @@ module.exports = {
   copyPackages: ['openzeppelin-solidity'],
   skipFiles: [
     'misc/Migrations.sol',
-    'mocks'
+    'mocks',
+    'RayonTokenCrowdsaleFlattened.sol',
+    'RayonTokenFlattened.sol'
   ]
 };

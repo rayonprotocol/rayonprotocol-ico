@@ -4,14 +4,15 @@
   "description": "This is RayonProtocol's ICO [Smart Contracts](https://en.wikipedia.org/wiki/Smart_contract) on Ethereum, based on [OpenZeppelin](https://github.com/OpenZeppelin/)",
   "main": "truffle-config.js",
   "scripts": {
-    "migrate:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten",
-    "migrate:dev": "rm -rf ./build && truffle compile && truffle migrate --network development",
+    "migrate:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten --verbose",
+    "migrate:dev": "rm -rf ./build && truffle compile && truffle migrate --network development --reset",
     "lint": "eslint .",
     "lint:sol": "solium -d .",
     "test": "TRUFFLE_TEST=true npm run ganache-cli:dev",
     "test:gas": "GAS_REPORTER=true npm test",
     "coverage": "SOLIDITY_COVERAGE=true npm run ganache-cli:dev",
-    "ganache-cli:dev": "./ganache-cli.sh"
+    "ganache-cli:dev": "./ganache-cli.sh",
+    "flatten": "./flatten-contracts.sh"
   },
   "repository": {
     "type": "git",
@@ -47,6 +48,7 @@
     "truffle-hdwallet-provider": "^0.0.5"
   },
   "dependencies": {
+    "moment-timezone": "^0.5.21",
     "openzeppelin-solidity": "1.11.0"
   }
 }
