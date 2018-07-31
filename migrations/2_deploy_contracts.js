@@ -2,10 +2,7 @@ const moment = require('moment-timezone');
 const RayonTokenCrowdsale = artifacts.require('RayonTokenCrowdsale.sol');
 const RayonToken = artifacts.require('RayonToken.sol');
 const BigNumber = web3.BigNumber;
-const epochTimestamp = (year, month, date, hour = 0, minute = 0) => moment()
-  .tz('Asia/Seoul') // KST
-  .set({ year, month: month - 1, date, hour, minute }) // refine month to be in range from 0 to 11.
-  .unix();
+const epochTimestamp = (m) => m.tz('Asia/Seoul').unix() // KST
 
 module.exports = function (deployer, network, accounts) {
   return deployer
@@ -14,8 +11,8 @@ module.exports = function (deployer, network, accounts) {
     })
     .then(() => {
       // these arguments are only used for development thus do not reflect whitepaper
-      const openingTime = epochTimestamp(2018, 7, moment().date(), moment().hour(), moment().minute() + 5);
-      const closingTime = epochTimestamp(2018, 12, 1);
+      const openingTime = epochTimestamp(moment().add(5, 'minutes'))
+      const closingTime = epochTimestamp(moment('2018-12-01'));
       const rate = 500;
       const [wallet] = accounts;
       const token = RayonToken.address;
@@ -28,6 +25,10 @@ module.exports = function (deployer, network, accounts) {
     .then(() => {
       const rayonToken = RayonToken.at(RayonToken.address);
       return rayonToken.transferOwnership(RayonTokenCrowdsale.address);
+    })
+    .then(() => {
+      const rayonTokenCrowdsale = RayonTokenCrowdsale.at(RayonTokenCrowdsale.address);
+      return rayonTokenCrowdsale.claimContractOwnership(RayonToken.address);
     })
     .catch(error => console.error({ error }));
 };
