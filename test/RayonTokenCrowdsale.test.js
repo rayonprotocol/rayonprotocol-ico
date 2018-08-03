@@ -4,8 +4,8 @@ const RayonTokenCrowdsale = artifacts.require('RayonTokenCrowdsaleMock');
 const BigNumber = web3.BigNumber;
 
 require('chai')
-  .use(require('chai-as-promised'))
-  .use(require('chai-bignumber')(BigNumber))
+.use(require('chai-bignumber')(BigNumber))
+.use(require('chai-as-promised'))
   .should();
 
 const ether = (n) => new BigNumber(web3.toWei(n, 'ether'));
