@@ -9,6 +9,7 @@ require('chai')
   .should();
 
 const ether = (n) => new BigNumber(web3.toWei(n, 'ether'));
+const tokenToWei = n => (new BigNumber(10)).pow(18).times(n);
 
 const getEthBalance = (address) => web3.eth.getBalance(address);
 
@@ -16,13 +17,14 @@ contract('RayonTokenCrowdsale', function (accounts) {
   const [owner, beneficiary, newOwner] = accounts;
   const rate = 500;
   const wallet = owner;
-  const cap = ether(3000);
+  const tokenCap = tokenToWei(5000);
+  const crowdsaleCap = ether(3000);
 
   beforeEach(async function () {
     const openingTime = moment().add(7, 'seconds').unix();
     const closingTime = moment('2099-12-31').unix();
-    this.token = await RayonToken.new();
-    this.crowdsale = await RayonTokenCrowdsale.new(rate, wallet, this.token.address, cap, openingTime, closingTime);
+    this.token = await RayonToken.new(tokenCap);
+    this.crowdsale = await RayonTokenCrowdsale.new(rate, wallet, this.token.address, crowdsaleCap, openingTime, closingTime);
     await this.token.transferOwnership(this.crowdsale.address);
     await this.crowdsale.claimContractOwnership(this.token.address);
     await this.crowdsale.addAddressToWhitelist(beneficiary);
@@ -105,7 +107,7 @@ contract('RayonTokenCrowdsale', function (accounts) {
 
     context(`when it has other claimable contract's pending ownership`, async function () {
       beforeEach(async function () {
-        this.otherContract = await RayonToken.new();
+        this.otherContract = await RayonToken.new(tokenCap);
         await this.otherContract.transferOwnership(this.crowdsale.address);
       });
 
