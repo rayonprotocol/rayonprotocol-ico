@@ -39,9 +39,7 @@ contract PausableTimedCrowdsale is Pausable, TimedCrowdsale {
     }
 
     function _increaseTotalPausedDuration() internal returns (bool) {
-        uint256 blockTime = getTimestamp();
-        require(blockTime >= pausedTime);
-        uint256 pausedDuration = blockTime.sub(pausedTime);
+        uint256 pausedDuration = getTimestamp().sub(pausedTime);
         pausedTime = 0;
         totalPausedDuration = totalPausedDuration.add(pausedDuration);
         emit IncreaseTotalPausedDuration(pausedDuration);
@@ -53,11 +51,27 @@ contract PausableTimedCrowdsale is Pausable, TimedCrowdsale {
     }
 
     /*
-     * @dev Checks whether the period in which the crowdsale is open has already elapsed.
+     * @dev Checks whether the period including totalPausedDuration in which the crowdsale is open has already elapsed.
      * @return Whether crowdsale period has elapsed
      */
     function hasClosed() public view returns (bool) {
         return getTimestamp() > closingTime.add(totalPausedDuration);
+    }
+
+    /**
+     * @dev Extend parent behavior requiring to be not puased
+     * @param _beneficiary Token purchaser
+     * @param _weiAmount Amount of wei contributed
+     */
+    function _preValidatePurchase(
+        address _beneficiary,
+        uint256 _weiAmount
+    )
+        internal
+        onlyWhileOpen
+        whenNotPaused
+    {
+        super._preValidatePurchase(_beneficiary, _weiAmount);
     }
 
 }

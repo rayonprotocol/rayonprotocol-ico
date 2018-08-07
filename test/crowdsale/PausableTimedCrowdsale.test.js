@@ -17,8 +17,8 @@ contract('PausableTimedCrowdsale', function (accounts) {
   const [owner, nonOwner] = accounts;
   const rate = 500;
   const wallet = owner;
-  const tokenSupply = new BigNumber('1e18');
-  const value = ether(20);
+  const tokenSupply = new BigNumber('1e25');
+  const value = ether(1);
 
 
   before(async function () {
@@ -173,6 +173,44 @@ contract('PausableTimedCrowdsale', function (accounts) {
       await increaseTimeTo(this.afterClosingTime + pausingDuration);
       const closedAfterDuration = await this.crowdsale.hasClosed();
       closedAfterDuration.should.be.true;
+    });
+  });
+
+
+  describe('accepting payments', function () {
+    const [, purchaser, investor] = accounts;
+
+    it('should reject payments before sale open', async function () {
+      await this.crowdsale.send(value).should.be.rejectedWith(/revert/);
+      await this.crowdsale.buyTokens(investor, { from: purchaser, value: value }).should.be.rejectedWith(/revert/);
+    });
+
+    it('should accept payments after open', async function () {
+      await increaseTimeTo(this.afterOpeningTime);
+      await this.crowdsale.sendTransaction({ value }).should.be.fulfilled;
+      await this.crowdsale.buyTokens(investor, { value, from: investor }).should.be.fulfilled;
+    });
+
+    it('should reject payments when opened and being paused', async function () {
+      await increaseTimeTo(this.afterOpeningTime);
+      await this.crowdsale.pause();
+      await this.crowdsale.send(value).should.be.rejectedWith(/revert/);
+      await this.crowdsale.buyTokens(investor, { value: value, from: purchaser }).should.be.rejectedWith(/revert/);
+    });
+
+    it('should accept payments when opened and paused duration left', async function () {
+      await increaseTimeTo(this.afterOpeningTime);
+      await this.crowdsale.pause();
+      const pausingDuration = duration.days(10);
+      await this.unpauseAfterDuration(pausingDuration);
+      await this.crowdsale.send(value).should.be.fulfilled;
+      await this.crowdsale.buyTokens(investor, { value: value, from: purchaser }).should.be.fulfilled;
+    });
+
+
+    it('should reject payments when ended', async function () {
+      await this.crowdsale.send(value).should.be.rejectedWith(/revert/);
+      await this.crowdsale.buyTokens(investor, { value: value, from: purchaser }).should.be.rejectedWith(/revert/);
     });
   });
 });
