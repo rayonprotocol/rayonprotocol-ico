@@ -8,6 +8,9 @@ contract RayonTokenCrowdsaleMock is RayonTokenCrowdsale {
         uint256 _rate,
         address _wallet,
         MintableToken _token,
+        // for PurchaseLimitedCrowdsale
+        uint256 _minimumLimit,
+        uint256 _maximumLimit,
         // for CappedCrowdsale
         uint256 _cap,
         // for TimedCrowdsale
@@ -15,7 +18,7 @@ contract RayonTokenCrowdsaleMock is RayonTokenCrowdsale {
         uint256 _closingTime
     )
         public
-        RayonTokenCrowdsale(_rate, _wallet, _token, _cap, _openingTime, _closingTime)
+        RayonTokenCrowdsale(_rate, _wallet, _token, _minimumLimit, _maximumLimit, _cap, _openingTime, _closingTime)
     {}
 
     function mockSetOpeningTime(uint256 _openingTime) public {
