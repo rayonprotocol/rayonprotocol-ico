@@ -1,6 +1,6 @@
 # RayonProtocol ICO 
 
-This is RayonProtocol's ICO [Smart Contracts](https://en.wikipedia.org/wiki/Smart_contract) prototype based on ERC20, using [OpenZeppelin](https://github.com/OpenZeppelin/), [TokenMarketNet](https://github.com/TokenMarketNet) and [DAICO](https://github.com/theabyssportal/DAICO-Smart-Contract). 
+This is RayonProtocol's ICO (Token & Crowdsale) [Smart Contracts](https://en.wikipedia.org/wiki/Smart_contract) prototype based on ERC20, using [OpenZeppelin](https://github.com/OpenZeppelin/), [TokenMarketNet](https://github.com/TokenMarketNet) and [DAICO](https://github.com/theabyssportal/DAICO-Smart-Contract). 
 
 ## About
 
@@ -12,11 +12,11 @@ This is RayonProtocol's ICO [Smart Contracts](https://en.wikipedia.org/wiki/Smar
 ### RayonTokenCrowdsale Architecture
 ![RayonTokenCrowdsale](doc/RayonTokenCrowdsale.png)
 
-### Getting Started
-#### Installing
+## Getting Started
+### Installing
 - Complete `.env.example` file to set enviroment variables used for truffle configuration
 
-#### Running the tests
+### Running the tests
 ```bash
 # test smart contracts
 yarn test 
@@ -26,13 +26,13 @@ yarn coverage # generate coverage reports
 open coverage/index.html # open reports
 ```
 
-#### Deployment
+### Deployment
 ```bash
 # deploy to development network
 yarn migrate:dev
 ```
 
-#### Flatten contracts
+### Flattening contracts
 In order to register smart contract code on [Etherscan](https://etherscan.io/), flattening is required.
 
 Install [solidity-flattener](https://github.com/BlockCatIO/solidity-flattener) first.
@@ -46,7 +46,7 @@ yarn flatten
 yarn truffle version
 ```
 
-#### More
+### More
 See [package.json](package.json) to find out more commands
 
 ## Built With
