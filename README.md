@@ -14,6 +14,10 @@ This is RayonProtocol's ICO (Token & Crowdsale) [Smart Contracts](https://en.wik
 
 ## Getting Started
 ### Installing
+- install all dependencies
+```bash
+yarn
+```
 - Complete `.env.example` file to set enviroment variables used for truffle configuration
 
 ### Running the tests
