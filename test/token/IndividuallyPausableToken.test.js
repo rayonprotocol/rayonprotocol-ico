@@ -129,12 +129,12 @@ contract('IndividuallyPausableToken', function (accounts) {
         this.token.pausedAddresses(anotherNonOwner).should.eventually.be.false;
       });
 
-      it('is individually paused after being individually paused', async function () {
+      it('pauses individually', async function () {
         await this.token.pauseAddress(anotherNonOwner).should.be.fulfilled;
         this.token.pausedAddresses(anotherNonOwner).should.eventually.be.true;
       });
 
-      it('is not individually paused after being individually paused and then unpaused', async function () {
+      it('pauses individually after an address is individually paused and then unpaused', async function () {
         await this.token.pauseAddress(anotherNonOwner).should.be.fulfilled;
         await this.token.unpauseAddress(anotherNonOwner).should.be.fulfilled;
         await this.token.pausedAddresses(anotherNonOwner).should.eventually.be.false;
