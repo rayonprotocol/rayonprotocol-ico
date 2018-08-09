@@ -20,10 +20,10 @@ module.exports = function (deployer, network, accounts) {
       const token = RayonToken.address;
       const mimimumLimit = new BigNumber(web3.toWei('2', 'ether'));
       const maximumLimit = new BigNumber(web3.toWei('500', 'ether'));
-      const crowdsaleCap = new BigNumber(web3.toWei('100000', 'ether'));
+      const crowdsaleHardCap = new BigNumber(web3.toWei('100000', 'ether'));
 
       return deployer.deploy(RayonTokenCrowdsale,
-        rate, wallet, token, mimimumLimit, maximumLimit, crowdsaleCap, openingTime, closingTime
+        rate, wallet, token, mimimumLimit, maximumLimit, crowdsaleHardCap, openingTime, closingTime
       );
     })
     .then(() => {

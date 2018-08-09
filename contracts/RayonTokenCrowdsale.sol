@@ -12,8 +12,22 @@ import "openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol"
 import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/WhitelistedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/distribution/PostDeliveryCrowdsale.sol";
+import "openzeppelin-solidity/contracts/crowdsale/distribution/FinalizableCrowdsale.sol";
 
-contract RayonTokenCrowdsale is Claimable, HasNoContracts, HasClaimableContracts, PurchaseLimitedCrowdsale, WhitelistedCrowdsale, CappedCrowdsale, MintedCrowdsale, PausableTimedCrowdsale, PostDeliveryCrowdsale {
+
+/* solium-disable-next-line */
+contract RayonTokenCrowdsale is
+    Claimable,
+    HasNoContracts,
+    HasClaimableContracts,
+    PurchaseLimitedCrowdsale,
+    WhitelistedCrowdsale,
+    CappedCrowdsale,
+    MintedCrowdsale,
+    PausableTimedCrowdsale,
+    PostDeliveryCrowdsale,
+    FinalizableCrowdsale
+{
     constructor(
         // for Crowdsale
         uint256 _rate,
@@ -23,7 +37,7 @@ contract RayonTokenCrowdsale is Claimable, HasNoContracts, HasClaimableContracts
         uint256 _minimumLimit,
         uint256 _maximumLimit,
         // for CappedCrowdsale
-        uint256 _cap,
+        uint256 _hardCap,
         // for TimedCrowdsale
         uint256 _openingTime,
         uint256 _closingTime
@@ -31,7 +45,7 @@ contract RayonTokenCrowdsale is Claimable, HasNoContracts, HasClaimableContracts
         public
         Crowdsale(_rate, _wallet, _token)
         PurchaseLimitedCrowdsale(_minimumLimit, _maximumLimit)
-        CappedCrowdsale(_cap)
+        CappedCrowdsale(_hardCap)
         TimedCrowdsale(_openingTime, _closingTime)
     {}
 }

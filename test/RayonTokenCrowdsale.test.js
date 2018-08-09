@@ -20,14 +20,14 @@ contract('RayonTokenCrowdsale', function (accounts) {
   const tokenCap = tokenToWei(5000);
   const mimimumLimit = ether(2);
   const maximumLimit = ether(100);
-  const crowdsaleCap = ether(3000);
+  const crowdsaleHardCap = ether(3000);
 
   beforeEach(async function () {
     const openingTime = moment().add(7, 'seconds').unix();
     const closingTime = moment('2099-12-31').unix();
     this.token = await RayonToken.new(tokenCap);
     this.crowdsale = await RayonTokenCrowdsale.new(
-      rate, wallet, this.token.address, mimimumLimit, maximumLimit, crowdsaleCap, openingTime, closingTime
+      rate, wallet, this.token.address, mimimumLimit, maximumLimit, crowdsaleHardCap, openingTime, closingTime
     );
     await this.token.transferOwnership(this.crowdsale.address);
     await this.crowdsale.claimContractOwnership(this.token.address);
