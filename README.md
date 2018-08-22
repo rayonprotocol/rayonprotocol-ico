@@ -22,8 +22,7 @@ This is RayonProtocol's ICO (Token & Crowdsale) [Smart Contracts](https://en.wik
 ```bash
 npm install
 ```
-- Create .env file
-Fill `.env.example` file to set enviroment variables used for truffle configuration and rename it to '.env'
+- Create .env file : Fill `.env.example` file to set enviroment variables used for truffle configuration and rename it to '.env'
 INFURA_API_KEY value is required when deployed in testnet.
 Input any valid mnemonic as MNEMONIC value
 
