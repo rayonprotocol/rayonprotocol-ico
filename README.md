@@ -16,9 +16,11 @@ This is RayonProtocol's ICO (Token & Crowdsale) [Smart Contracts](https://en.wik
 ### Installing
 - install all dependencies
 ```bash
-yarn
+npm install
 ```
-- Complete `.env.example` file to set enviroment variables used for truffle configuration
+- Fill `.env.example` file to set enviroment variables used for truffle configuration and rename it to '.env'
+- INFURA_API_KEY value is required when deployed in testnet.
+- Input any valid mnemonic as MNEMONIC value
 
 ### Running the tests
 ```bash
