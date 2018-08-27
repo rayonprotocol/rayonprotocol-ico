@@ -20,6 +20,7 @@ contract('PausableTimedCrowdsale', function (accounts) {
   const tokenSupply = new BigNumber('1e25');
   const value = ether(1);
 
+  //REVIEW: BETTER to declare all members including unpauseAfterDuration here
 
   before(async function () {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
@@ -28,28 +29,40 @@ contract('PausableTimedCrowdsale', function (accounts) {
 
   beforeEach(async function () {
     // await advanceBlock();
-    const blockTime = await latestTime();
-    this.openingTime = blockTime + duration.days(1);
+    const currentTime = await latestTime();
+    // Setup time
+    this.openingTime = currentTime + duration.days(1);
     this.afterOpeningTime = this.openingTime + duration.seconds(1);
     this.closingTime = this.openingTime + duration.weeks(12);
     this.afterClosingTime = this.closingTime + duration.seconds(1);
+    // Token and Crowdsale
     this.token = await MintableToken.new();
     this.crowdsale = await PausableTimedCrowdsale.new(
       this.openingTime, this.closingTime, rate, wallet, this.token.address,
     );
+    // Mint as much as tokenSupply
     await this.token.mint(this.crowdsale.address, tokenSupply);
     this.unpauseAfterDuration = async (pausingDuration) => {
       const pausedTime = await this.crowdsale.pausedTime();
       await this.crowdsale.mockSetTimestamp(pausedTime.plus(pausingDuration));
       await this.crowdsale.unpause();
+      // REVIEW: LOOKS dangerous code, test code writer knows the detail behavior of crowdsale and crowdsalemock.
       await this.crowdsale.mockSetTimestamp(0);
     };
   });
 
-  describe('sale pause', async function () {
+  describe('SALE PAUSE', async function () {
     context('when the sender is the crowdsale owner', async function () {
+
+      context('and sale is not opened yet', async function () {
+        it('can not pause', async function () {
+          await this.crowdsale.pause().should.be.rejectedWith(/revert/);
+        });
+      })
+
       context('and sale is opened', async function () {
         beforeEach(async function () {
+          // make sale opened
           await increaseTimeTo(this.afterOpeningTime);
         });
 
@@ -59,14 +72,16 @@ contract('PausableTimedCrowdsale', function (accounts) {
         });
 
         it('sets paused time', async function () {
+          // pausedTime must be 0 before pause
           const pausedTimeBeforePause = await this.crowdsale.pausedTime();
           pausedTimeBeforePause.should.be.bignumber.equal(0);
 
           await this.crowdsale.pause().should.be.fulfilled;
-          const blocklatestTime = await latestTime();
+          const blockTimeWhenPaused = await latestTime();
 
+          // pausedTime must be same with the block time when paused
           const pausedTimeAfterPause = await this.crowdsale.pausedTime();
-          pausedTimeAfterPause.should.be.bignumber.equal(blocklatestTime);
+          pausedTimeAfterPause.should.be.bignumber.equal(blockTimeWhenPaused);
         });
 
         it('can not pause crowdsale that already has been paused', async function () {
@@ -74,29 +89,32 @@ contract('PausableTimedCrowdsale', function (accounts) {
           await this.crowdsale.pause().should.be.rejectedWith(/revert/);
         });
       });
-
-      context('and sale is not opened yet', async function () {
-        it('reverts', async function () {
-          await this.crowdsale.pause().should.be.rejectedWith(/revert/);
-        });
-      })
     });
 
+    //REVIEW: context(sale is opened) is required
     context('when the sender is not the crowdsale owner', async function () {
-      it('reverts', async function () {
+      it('can not pause by nonOwner', async function () {
         await this.crowdsale.pause({ from: nonOwner }).should.be.rejectedWith(/revert/);
       });
     });
   });
 
-  describe('sale unpause', async function () {
-
+  describe('SALE UNPAUSE', async function () {
     context('when the sender is the crowdsale owner', async function () {
+      
+      context('and sale is not paused', async function () {
+        it('can not unpause', async function () {
+          await this.crowdsale.unpause().should.be.rejectedWith(/revert/);
+        });
+      })
+
       context('and sale is paused', async function () {
+        // REVIEW: MUST relocate to just inside 'SALE UNPAUSE'
         beforeEach(async function () {
           await increaseTimeTo(this.afterOpeningTime);
           await this.crowdsale.pause();
         });
+
         it('unpauses crowdsale', async function () {
           await this.crowdsale.unpause().should.be.fulfilled;
           this.crowdsale.paused().should.eventually.be.false;
@@ -107,12 +125,13 @@ contract('PausableTimedCrowdsale', function (accounts) {
           await this.crowdsale.unpause().should.be.rejectedWith(/revert/);
         });
 
+        // REVIEW: Duplicated with the above
         it('can not unpause crowdsale that already has been unpaused', async function () {
           await this.crowdsale.unpause().should.be.fulfilled;
           await this.crowdsale.unpause().should.be.rejectedWith(/revert/);
         });
 
-        it('increases total paused duration', async function () {
+        it('total paused duration is accumulated', async function () {
           const pausingDuration = duration.hours(20);
           const count = 10;
           for (let i = 0; i < count; i++) {
@@ -132,12 +151,11 @@ contract('PausableTimedCrowdsale', function (accounts) {
           secondLog.event.should.be.equal('IncreaseTotalPausedDuration');
           secondLog.args.pausedDuration.should.be.bignumber.equal(pausingDuration);
         });
+
+        //REVIEW: it('must remain unclosed when time passed the closing time as unclosed')
+
+        //REVIEW: it('can unpaused after time passed the closing time as unclosed')
       });
-      context('and sale is not paused', async function () {
-        it('reverts', async function () {
-          await this.crowdsale.unpause().should.be.rejectedWith(/revert/);
-        });
-      })
     });
 
     context('when the sender is not the crowdsale owner', async function () {

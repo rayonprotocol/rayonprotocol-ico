@@ -29,6 +29,8 @@ contract PausableTimedCrowdsaleMock is PausableTimedCrowdsale {
         mockTime = _time;
     }
 
+    // REVIEW: mock class has special capability that it can change values of members of super contract
+    //         blockbox test and the accurate original contract's behavior test become impossible.
     function mockSetOpeningTime(uint256 _openingTime) public {
         openingTime = _openingTime;
     }
