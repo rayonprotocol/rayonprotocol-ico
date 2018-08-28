@@ -12,7 +12,7 @@ contract IndividuallyPausableToken is StandardToken, Ownable {
     // REVIEW: Add "Log" prefix for events
     event PauseAddress(address indexed pausedAddress);
     event UnpauseAddress(address indexed unpausedAddress);
-    event EnableIndividualPause();
+    event EnableIndividualPause();//REVIEW: MAY not be necessary to turn on/off wholy
     event DisableIndividualPause();
 
     mapping(address => bool) public pausedAddresses; //REVIEW: addressesPaused

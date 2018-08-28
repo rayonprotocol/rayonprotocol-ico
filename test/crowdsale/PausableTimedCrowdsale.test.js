@@ -19,7 +19,15 @@ contract('PausableTimedCrowdsale', function (accounts) {
   const wallet = owner;
   const tokenSupply = new BigNumber('1e25');
   const value = ether(1);
+  let crowdsale;
 
+  unpauseAfterDuration = async (pausingDuration) => {
+    const pausedTime = await this.crowdsale.pausedTime();
+    await this.crowdsale.mockSetTimestamp(pausedTime.plus(pausingDuration));
+    await this.crowdsale.unpause();
+    // REVIEW: LOOKS dangerous code, test code writer knows the detail behavior of crowdsale and crowdsalemock.
+    await this.crowdsale.mockSetTimestamp(0);
+  };
   //REVIEW: BETTER to declare all members including unpauseAfterDuration here
 
   before(async function () {
@@ -42,17 +50,9 @@ contract('PausableTimedCrowdsale', function (accounts) {
     );
     // Mint as much as tokenSupply
     await this.token.mint(this.crowdsale.address, tokenSupply);
-    this.unpauseAfterDuration = async (pausingDuration) => {
-      const pausedTime = await this.crowdsale.pausedTime();
-      await this.crowdsale.mockSetTimestamp(pausedTime.plus(pausingDuration));
-      await this.crowdsale.unpause();
-      // REVIEW: LOOKS dangerous code, test code writer knows the detail behavior of crowdsale and crowdsalemock.
-      await this.crowdsale.mockSetTimestamp(0);
-    };
   });
 
   describe('SALE PAUSE', async function () {
-    context('when the sender is the crowdsale owner', async function () {
 
       context('and sale is not opened yet', async function () {
         it('can not pause', async function () {
@@ -68,7 +68,7 @@ contract('PausableTimedCrowdsale', function (accounts) {
 
         it('pauses crowdsale', async function () {
           await this.crowdsale.pause().should.be.fulfilled;
-          this.crowdsale.paused().should.eventually.be.true;
+          this.crowdsale.paused().should.eventually.be.true; // REVIEW: BETTER to use assert looks
         });
 
         it('sets paused time', async function () {
@@ -88,13 +88,11 @@ contract('PausableTimedCrowdsale', function (accounts) {
           await this.crowdsale.pause().should.be.fulfilled;
           await this.crowdsale.pause().should.be.rejectedWith(/revert/);
         });
-      });
-    });
 
-    //REVIEW: context(sale is opened) is required
-    context('when the sender is not the crowdsale owner', async function () {
-      it('can not pause by nonOwner', async function () {
-        await this.crowdsale.pause({ from: nonOwner }).should.be.rejectedWith(/revert/);
+        it('can not pause by nonOwner', async function () {
+          await this.crowdsale.pause({ from: nonOwner }).should.be.rejectedWith(/revert/);
+          await this.crowdsale.pause().should.be.fulfilled;
+        });
       });
     });
   });
@@ -125,12 +123,6 @@ contract('PausableTimedCrowdsale', function (accounts) {
           await this.crowdsale.unpause().should.be.rejectedWith(/revert/);
         });
 
-        // REVIEW: Duplicated with the above
-        it('can not unpause crowdsale that already has been unpaused', async function () {
-          await this.crowdsale.unpause().should.be.fulfilled;
-          await this.crowdsale.unpause().should.be.rejectedWith(/revert/);
-        });
-
         it('total paused duration is accumulated', async function () {
           const pausingDuration = duration.hours(20);
           const count = 10;
@@ -154,7 +146,7 @@ contract('PausableTimedCrowdsale', function (accounts) {
 
         //REVIEW: it('must remain unclosed when time passed the closing time as unclosed')
 
-        //REVIEW: it('can unpaused after time passed the closing time as unclosed')
+        //REVIEW: it('can unpause after time passed the closing time as unclosed')
       });
     });
 
@@ -224,7 +216,6 @@ contract('PausableTimedCrowdsale', function (accounts) {
       await this.crowdsale.send(value).should.be.fulfilled;
       await this.crowdsale.buyTokens(investor, { value: value, from: purchaser }).should.be.fulfilled;
     });
-
 
     it('should reject payments when ended', async function () {
       await this.crowdsale.send(value).should.be.rejectedWith(/revert/);

@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
 /**
  * @title Contracts can claim pending ownership of other contract
  */
-contract HasClaimableContracts is Ownable { //REVIEW MAY be better to be OwnershipClaimable
+contract HasClaimableContracts is Ownable {
     /**
     * @param claimableContract Claimable The address of the Claimable contract
     */
