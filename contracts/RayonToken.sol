@@ -9,10 +9,10 @@ import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "./token/IndividuallyPausableToken.sol";
 
 contract RayonToken is Claimable, HasNoEther, CappedToken, PausableToken, IndividuallyPausableToken, BurnableToken {
-    string public name = "RAYON";
+    string public name = "RayonProtocol";
     string public symbol = "RYN";
     uint8 public decimals = 18;
-    constructor(
+    constructor(  //REVIEW: BETTER to hard code the cap here
         // for CappedToken
         uint256 _cap
     )

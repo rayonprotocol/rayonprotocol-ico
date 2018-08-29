@@ -9,13 +9,14 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
  * @dev Token with ability to pause transfers within wallets included in pausedAddressese
  */
 contract IndividuallyPausableToken is StandardToken, Ownable {
+    // REVIEW: Add "Log" prefix for events
     event PauseAddress(address indexed pausedAddress);
     event UnpauseAddress(address indexed unpausedAddress);
-    event EnableIndividualPause();
+    event EnableIndividualPause();//REVIEW: MAY not be necessary to turn on/off wholy
     event DisableIndividualPause();
 
-    mapping(address => bool) public pausedAddresses;
-    bool public individualPauseEnabled = false;
+    mapping(address => bool) public pausedAddresses; //REVIEW: addressesPaused
+    bool public individualPauseEnabled = false;  //REVIEW: MAY not be necessary to turn on/off wholy
     
     /**
      * @dev Modifier to make a function callable only when the contract is individualPauseEnabled.
@@ -33,7 +34,7 @@ contract IndividuallyPausableToken is StandardToken, Ownable {
         _;
     }
 
-    /**
+    /** REVIEW: this function is not necessary.
      * @dev Modifier to make a function callable only when contract is not individualPauseEnabled or the given addresses are not paused.
      * @param _from From address
      * @param _to To address
@@ -102,6 +103,7 @@ contract IndividuallyPausableToken is StandardToken, Ownable {
         uint256 _value
     )
         public
+        // REVIEW whenNotIndividuallyPaused(msg.sender)
         whenNotIndividuallyPausedWithin(msg.sender, _to)
         returns (bool)
     {
@@ -114,13 +116,15 @@ contract IndividuallyPausableToken is StandardToken, Ownable {
         uint256 _value
     )
         public
-        whenNotIndividuallyPausedWithin(_from, _to) 
+        whenNotIndividuallyPausedWithin(_from, _to) //REVIEW: NOT NEED TO consider _to
+        //REVIEW: whenNotIndividuallyPaused(_from)
         whenNotIndividuallyPaused(msg.sender)
         returns (bool)
     {
         return super.transferFrom(_from, _to, _value);
     }
 
+    // REVIEW: MAY be unnecessary to disable approve, increaseApproval, decreaseApproval
     function approve(
         address _spender,
         uint256 _value

@@ -17,16 +17,17 @@ import "openzeppelin-solidity/contracts/crowdsale/distribution/FinalizableCrowds
 
 /* solium-disable-next-line */
 contract RayonTokenCrowdsale is
-    Claimable,
-    HasNoContracts,
-    HasClaimableContracts,
+    Claimable,         // This is to change ownership of this contract
+    HasNoContracts,     // This is to reclaim the ownership of Token
+    HasClaimableContracts,// This is to achieve the ownership of Token
     PurchaseLimitedCrowdsale,
     WhitelistedCrowdsale,
     CappedCrowdsale,
     MintedCrowdsale,
     PausableTimedCrowdsale,
     PostDeliveryCrowdsale,
-    FinalizableCrowdsale
+    FinalizableCrowdsale  //REVIEW: Looks redundant
+    // REVIEW: Refundable is required
 {
     constructor(
         // for Crowdsale
@@ -48,4 +49,8 @@ contract RayonTokenCrowdsale is
         CappedCrowdsale(_hardCap)
         TimedCrowdsale(_openingTime, _closingTime)
     {}
+
+    // REVIEW: withdrawToken BETTER emit an event.
+    // REIVEW: PostDeliveryCrowdsale SHOULD be extended into OwnerCanDeliveryCrowdsale 
+            //which the owner is allowed to withdraw token for a beneficiary or beneficiaries
 }
