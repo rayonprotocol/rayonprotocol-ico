@@ -47,9 +47,9 @@ contract('PausableTimedCrowdsale', function (accounts) {
     const currentTime = await latestTime();
     // Setup time
     openingTime = currentTime + duration.days(1);
-    afterOpeningTime = openingTime + duration.seconds(1);
+    afterOpeningTime = openingTime + duration.seconds(5);
     closingTime = openingTime + duration.weeks(12);
-    afterClosingTime = closingTime + duration.seconds(1);
+    afterClosingTime = closingTime + duration.seconds(5);
     // Token and Crowdsale
     token = await MintableToken.new();
     crowdsale = await PausableTimedCrowdsale.new(
@@ -157,7 +157,7 @@ contract('PausableTimedCrowdsale', function (accounts) {
       });
     });
 
-    context('and sale is not paused', async function () {
+    context('when sale is not paused', async function () {
       it('can not unpause when crowdsale is not paused', async function () {
         await crowdsale.unpause().should.be.rejectedWith(/revert/);
       });
@@ -166,7 +166,6 @@ contract('PausableTimedCrowdsale', function (accounts) {
 
   describe('sale closing', async function () {
     beforeEach(async function () {
-
       await increaseTimeTo(afterOpeningTime);
     });
 
