@@ -1,6 +1,9 @@
-const moment = require('moment-timezone');
+import { advanceBlock } from 'openzeppelin-solidity/test/helpers/advanceToBlock';
+import { increaseTimeTo, duration } from 'openzeppelin-solidity/test/helpers/increaseTime';
+import { latestTime } from 'openzeppelin-solidity/test/helpers/latestTime';
+
 const RayonToken = artifacts.require('RayonToken');
-const RayonTokenCrowdsale = artifacts.require('RayonTokenCrowdsaleMock');
+const RayonTokenCrowdsale = artifacts.require('RayonTokenCrowdsale');
 const BigNumber = web3.BigNumber;
 
 require('chai')
@@ -22,66 +25,83 @@ contract('RayonTokenCrowdsale', function (accounts) {
   const maximumLimit = ether(100);
   const crowdsaleHardCap = ether(3000);
 
+  let crowdsale;
+  let openingTime;
+  let afterOpeningTime;
+  let closingTime;
+  let afterClosingTime;
+  let token;
+
+  before(async function () {
+    // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
+    await advanceBlock();
+  });
+
   beforeEach(async function () {
-    const openingTime = moment().add(7, 'seconds').unix();
-    const closingTime = moment('2099-12-31').unix();
-    this.token = await RayonToken.new(tokenCap);
-    this.crowdsale = await RayonTokenCrowdsale.new(
-      rate, wallet, this.token.address, mimimumLimit, maximumLimit, crowdsaleHardCap, openingTime, closingTime
+    const currentTime = await latestTime();
+    // Setup time
+    openingTime = currentTime + duration.days(1);
+    afterOpeningTime = openingTime + duration.seconds(5);
+    closingTime = openingTime + duration.weeks(12);
+    afterClosingTime = closingTime + duration.seconds(5);
+    // Token and Crowdsale
+    token = await RayonToken.new(tokenCap);
+    crowdsale = await RayonTokenCrowdsale.new(
+      rate, wallet, token.address, mimimumLimit, maximumLimit, crowdsaleHardCap, openingTime, closingTime
     );
-    await this.token.transferOwnership(this.crowdsale.address);
-    await this.crowdsale.claimContractOwnership(this.token.address);
-    await this.crowdsale.addAddressToWhitelist(beneficiary);
+    await token.transferOwnership(crowdsale.address);
+    await crowdsale.claimContractOwnership(token.address);
+    await crowdsale.addAddressToWhitelist(beneficiary);
   });
 
   describe('valid sale', function () {
     it('is not reached cap', async function () {
-      await this.crowdsale.capReached().should.eventually.be.false;
+      await crowdsale.capReached().should.eventually.be.false;
     });
 
     it('is opened', async function () {
-      await this.crowdsale.hasClosed().should.eventually.be.false;
+      await crowdsale.hasClosed().should.eventually.be.false;
     });
 
     it('verifies whiltelistee', async function () {
-      await this.crowdsale.whitelist(beneficiary).should.eventually.be.true;
+      await crowdsale.whitelist(beneficiary).should.eventually.be.true;
     });
   });
 
   describe('token purchase', function () {
     beforeEach(async function () {
-      // mocking sale opened
-      await this.crowdsale.mockSetOpeningTime(moment().unix());
+      // make sale opened
+      await increaseTimeTo(afterOpeningTime);
     });
 
     it(`doesn't immediately assign tokens to beneficiary`, async function () {
       const value = ether(5);
       const expectedLockedTokenBalance = value.mul(rate);
-      await this.crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
 
-      const tokenBalance = await this.token.balanceOf(beneficiary);
+      const tokenBalance = await token.balanceOf(beneficiary);
       tokenBalance.should.be.bignumber.equal(0);
-      const lockedTokenBalance = await this.crowdsale.balances(beneficiary)
+      const lockedTokenBalance = await crowdsale.balances(beneficiary)
       lockedTokenBalance.should.bignumber.be.equal(expectedLockedTokenBalance);
     });
 
     it('assigns tokens when beneficiary claims after sale close', async function () {
       const value = ether(5);
       const expectedTokenBalance = value.mul(rate);
-      await this.crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
 
-      // mocking sale closeed
-      await this.crowdsale.mockSetClosingTime(moment().subtract(10, 's').unix());
+      // make sale close
+      await increaseTimeTo(afterClosingTime);
 
-      await this.crowdsale.withdrawTokens({ from: beneficiary }).should.be.fulfilled;
-      const tokenBalance = await this.token.balanceOf(beneficiary);
+      await crowdsale.withdrawTokens({ from: beneficiary }).should.be.fulfilled;
+      const tokenBalance = await token.balanceOf(beneficiary);
       tokenBalance.should.be.bignumber.equal(expectedTokenBalance);
     });
 
     it('forwards funds to wallet', async function () {
       const value = ether(5);
       const balanceBeforeForward = await getEthBalance(wallet);
-      await this.crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
 
       const balanceAfterForward = await getEthBalance(wallet);
       balanceAfterForward.should.be.bignumber.equal(balanceBeforeForward.plus(value));
@@ -90,44 +110,44 @@ contract('RayonTokenCrowdsale', function (accounts) {
 
   describe('ownership', function () {
     it('returns token ownership to owner', async function () {
-      await this.token.owner().should.eventually.be.equal(this.crowdsale.address);
+      await token.owner().should.eventually.be.equal(crowdsale.address);
 
-      await this.crowdsale.reclaimContract(this.token.address);
-      await this.token.claimOwnership({ from: owner });
-      await this.token.owner().should.eventually.be.equal(owner);
+      await crowdsale.reclaimContract(token.address);
+      await token.claimOwnership({ from: owner });
+      await token.owner().should.eventually.be.equal(owner);
     });
 
     it(`doesn't immediately transfer its ownership to newOwner`, async function () {
-      await this.crowdsale.transferOwnership(newOwner).should.be.fulfilled;
-      await this.crowdsale.owner().should.eventually.be.equal(owner);
-      await this.crowdsale.pendingOwner().should.eventually.be.equal(newOwner);
+      await crowdsale.transferOwnership(newOwner).should.be.fulfilled;
+      await crowdsale.owner().should.eventually.be.equal(owner);
+      await crowdsale.pendingOwner().should.eventually.be.equal(newOwner);
     });
 
     it(`transfers its ownership when new owner claims ownership`, async function () {
-      await this.crowdsale.transferOwnership(newOwner).should.be.fulfilled;
-      await this.crowdsale.claimOwnership({ from: newOwner });
-      await this.crowdsale.owner().should.eventually.be.equal(newOwner);
+      await crowdsale.transferOwnership(newOwner).should.be.fulfilled;
+      await crowdsale.claimOwnership({ from: newOwner });
+      await crowdsale.owner().should.eventually.be.equal(newOwner);
     });
 
     context(`when it has other claimable contract's pending ownership`, async function () {
       beforeEach(async function () {
         this.otherContract = await RayonToken.new(tokenCap);
-        await this.otherContract.transferOwnership(this.crowdsale.address);
+        await this.otherContract.transferOwnership(crowdsale.address);
       });
 
       it(`claims other contract ownership`, async function () {
         await this.otherContract.pendingOwner()
-          .should.eventually.be.equal(this.crowdsale.address, 'pending owner before claim');
-        await this.crowdsale.claimContractOwnership(this.otherContract.address)
+          .should.eventually.be.equal(crowdsale.address, 'pending owner before claim');
+        await crowdsale.claimContractOwnership(this.otherContract.address)
           .should.be.fulfilled;
         await this.otherContract.owner()
-          .should.eventually.be.equal(this.crowdsale.address, 'owner after claim');
+          .should.eventually.be.equal(crowdsale.address, 'owner after claim');
       });
 
       it(`reverts when invalid contract is claimed`, async function () {
-        await this.crowdsale.claimContractOwnership(0)
+        await crowdsale.claimContractOwnership(0)
           .should.be.rejectedWith(/revert/);
-        await this.crowdsale.claimContractOwnership(this.crowdsale.address)
+        await crowdsale.claimContractOwnership(crowdsale.address)
           .should.be.rejectedWith(/revert/);
       });
     })

@@ -1,4 +1,4 @@
-const PurchaseLimitedCrowdsale = artifacts.require('PurchaseLimitedCrowdsaleMock');
+const PurchaseLimitedCrowdsale = artifacts.require('PurchaseLimitedCrowdsaleImpl');
 const MintableToken = artifacts.require('MintableToken.sol');
 const BigNumber = web3.BigNumber;
 
@@ -20,50 +20,52 @@ contract('PurchaseLimitedCrowdsale', function (accounts) {
   const excessValue = maximumLimit.add(ether(1));
   const underValue = minimumLimit.sub(ether(1));
 
+  let crowdsale;
+  let token;
   beforeEach(async function () {
-    this.token = await MintableToken.new();
-    this.crowdsale = await PurchaseLimitedCrowdsale.new(
-      minimumLimit, maximumLimit, rate, wallet, this.token.address,
+    token = await MintableToken.new();
+    crowdsale = await PurchaseLimitedCrowdsale.new(
+      minimumLimit, maximumLimit, rate, wallet, token.address,
     );
-    await this.token.mint(this.crowdsale.address, tokenSupply);
+    await token.mint(crowdsale.address, tokenSupply);
   });
 
   describe('total purchase amount', async function () {
     it('accumulates purchase amount', async function () {
-      const raisedWeiBeforePurchase = await this.crowdsale.contributions(purchaser);
+      const raisedWeiBeforePurchase = await crowdsale.contributions(purchaser);
       raisedWeiBeforePurchase.should.be.bignumber.equal(0);
 
-      await this.crowdsale.sendTransaction({ value, from: purchaser }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value, from: purchaser }).should.be.fulfilled;
 
-      const raisedWeiAfterPurchase = await this.crowdsale.contributions(purchaser);
+      const raisedWeiAfterPurchase = await crowdsale.contributions(purchaser);
       raisedWeiAfterPurchase.should.be.bignumber.equal(value);
 
-      await this.crowdsale.sendTransaction({ value, from: purchaser }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value, from: purchaser }).should.be.fulfilled;
 
-      const raisedWeiAfterSecondPurchase = await this.crowdsale.contributions(purchaser);
+      const raisedWeiAfterSecondPurchase = await crowdsale.contributions(purchaser);
       raisedWeiAfterSecondPurchase.should.be.bignumber.equal(value.times(2));
     });
   });
 
   describe('purchase limit', async function () {
     it('accepts the purchase by the minimum amount', async function () {
-      await this.crowdsale.sendTransaction({ value: minimumLimit }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value: minimumLimit }).should.be.fulfilled;
     });
 
     it('accepts the purchase by the maximum amount', async function () {
-      await this.crowdsale.sendTransaction({ value: maximumLimit }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value: maximumLimit }).should.be.fulfilled;
     });
 
     it('accepts the purchase for amount between minimumLimit and maximumLimit', async function () {
-      await this.crowdsale.sendTransaction({ value }).should.be.fulfilled;
+      await crowdsale.sendTransaction({ value }).should.be.fulfilled;
     });
 
     it('rejects the purchase under minimum amount', async function () {
-      await this.crowdsale.sendTransaction({ value: underValue }).should.be.rejectedWith(/revert/);
+      await crowdsale.sendTransaction({ value: underValue }).should.be.rejectedWith(/revert/);
     });
 
     it('rejects the purchase excessing maximum amount', async function () {
-      await this.crowdsale.sendTransaction({ value: excessValue }).should.be.rejectedWith(/revert/);
+      await crowdsale.sendTransaction({ value: excessValue }).should.be.rejectedWith(/revert/);
     });
   });
 });

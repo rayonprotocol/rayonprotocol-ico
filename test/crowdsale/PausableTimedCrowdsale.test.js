@@ -1,4 +1,3 @@
-import moment from 'moment-timezone';
 import { advanceBlock } from 'openzeppelin-solidity/test/helpers/advanceToBlock';
 import { increaseTimeTo, duration } from 'openzeppelin-solidity/test/helpers/increaseTime';
 import { latestTime } from 'openzeppelin-solidity/test/helpers/latestTime';
