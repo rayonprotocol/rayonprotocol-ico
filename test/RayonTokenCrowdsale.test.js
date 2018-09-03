@@ -7,23 +7,28 @@ const RayonTokenCrowdsale = artifacts.require('RayonTokenCrowdsale');
 const BigNumber = web3.BigNumber;
 
 require('chai')
-.use(require('chai-bignumber')(BigNumber))
-.use(require('chai-as-promised'))
+  .use(require('chai-bignumber')(BigNumber))
+  .use(require('chai-as-promised'))
   .should();
 
 const ether = (n) => new BigNumber(web3.toWei(n, 'ether'));
 const tokenToWei = n => (new BigNumber(10)).pow(18).times(n);
 
 const getEthBalance = (address) => web3.eth.getBalance(address);
+const getTxFee = async ({ tx, receipt }) => {
+  return (await web3.eth.getTransaction(tx).gasPrice).times(receipt.gasUsed);
+};
+
 
 contract('RayonTokenCrowdsale', function (accounts) {
-  const [owner, beneficiary, newOwner] = accounts;
+  const [owner, beneficiary, newOwner, nonOwner, anotherNonOwner] = accounts;
   const rate = 500;
   const wallet = owner;
-  const tokenCap = tokenToWei(5000);
   const mimimumLimit = ether(2);
   const maximumLimit = ether(100);
-  const crowdsaleHardCap = ether(3000);
+  const crowdsaleHardCap = ether(200);
+  const crowdsaleSoftCap = ether(100);
+  const tokenCap = crowdsaleHardCap.times(rate);
 
   let crowdsale;
   let openingTime;
@@ -47,11 +52,15 @@ contract('RayonTokenCrowdsale', function (accounts) {
     // Token and Crowdsale
     token = await RayonToken.new(tokenCap);
     crowdsale = await RayonTokenCrowdsale.new(
-      rate, wallet, token.address, mimimumLimit, maximumLimit, crowdsaleHardCap, openingTime, closingTime
+      rate, wallet, token.address, mimimumLimit, maximumLimit, crowdsaleHardCap, openingTime, closingTime, crowdsaleSoftCap
     );
     await token.transferOwnership(crowdsale.address);
     await crowdsale.claimContractOwnership(token.address);
-    await crowdsale.addAddressToWhitelist(beneficiary);
+    await Promise.all([
+      crowdsale.addAddressToWhitelist(nonOwner),
+      crowdsale.addAddressToWhitelist(anotherNonOwner),
+      crowdsale.addAddressToWhitelist(beneficiary),
+    ]);
   });
 
   describe('valid sale', function () {
@@ -74,7 +83,7 @@ contract('RayonTokenCrowdsale', function (accounts) {
       await increaseTimeTo(afterOpeningTime);
     });
 
-    it(`doesn't immediately assign tokens to beneficiary`, async function () {
+    it('does not immediately distribute tokens to beneficiary', async function () {
       const value = ether(5);
       const expectedLockedTokenBalance = value.mul(rate);
       await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
@@ -85,26 +94,100 @@ contract('RayonTokenCrowdsale', function (accounts) {
       lockedTokenBalance.should.bignumber.be.equal(expectedLockedTokenBalance);
     });
 
-    it('assigns tokens when beneficiary claims after sale close', async function () {
-      const value = ether(5);
-      const expectedTokenBalance = value.mul(rate);
-      await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
+    context('when hard cap is about to be reached', async function () {
+      beforeEach(async function () {
+        const value = crowdsaleHardCap.minus(maximumLimit).minus(ether(1));
+        await crowdsale.sendTransaction({ value, from: nonOwner });
+        await crowdsale.sendTransaction({ value, from: anotherNonOwner });
+      });
 
-      // make sale close
-      await increaseTimeTo(afterClosingTime);
+      it('lets beneficiary purchase tokens upto hard cap', async function () {
+        const value = mimimumLimit;
+        const expectedLockedTokenBalance = value.mul(rate);
+        await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
+        const lockedTokenBalance = await crowdsale.balances(beneficiary);
+        lockedTokenBalance.should.bignumber.be.equal(expectedLockedTokenBalance);
+      });
 
-      await crowdsale.withdrawTokens({ from: beneficiary }).should.be.fulfilled;
-      const tokenBalance = await token.balanceOf(beneficiary);
-      tokenBalance.should.be.bignumber.equal(expectedTokenBalance);
+      it('reverts on token purchase over hard cap', async function () {
+        const value = mimimumLimit.times(2);
+        await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.rejectedWith(/revert/);
+      });
+    });
+  });
+
+  describe('refund / forwarding / distribution', async function () {
+    let value;
+    let expectedTokenBalance;
+
+    beforeEach(async function () {
+      // make sale opened
+      await increaseTimeTo(afterOpeningTime);
     });
 
-    it('forwards funds to wallet', async function () {
-      const value = ether(5);
-      const balanceBeforeForward = await getEthBalance(wallet);
-      await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
+    context('when sale is closed with softcap reach failure', async function () {
+      beforeEach(async function () {
+        // purchase tokens 
+        value = mimimumLimit;
+        expectedTokenBalance = value.mul(rate);
+        await crowdsale.sendTransaction({ value, from: beneficiary });;
+        // make sale close
+        await increaseTimeTo(afterClosingTime);
+        // finalize by owner
 
-      const balanceAfterForward = await getEthBalance(wallet);
-      balanceAfterForward.should.be.bignumber.equal(balanceBeforeForward.plus(value));
+      });
+
+      it('refunds when beneficiary claims after finalization', async function () {
+        await crowdsale.finalize().should.be.fulfilled;
+        const balanceBeforeRefund = await getEthBalance(beneficiary);
+        const result = await crowdsale.claimRefund({ from: beneficiary }).should.be.fulfilled;
+        const txFee = await getTxFee(result);
+        const balanceAfterRefund = await getEthBalance(beneficiary);
+        balanceAfterRefund.should.be.bignumber.equal(balanceBeforeRefund.plus(value).minus(txFee));
+      });
+
+      it('does not forward fund to wallet after finalization', async function () {
+        const balanceBeforeForwarding = await getEthBalance(wallet);
+        const result = await crowdsale.finalize().should.be.fulfilled;
+        const txFee = await getTxFee(result);
+        const balanceAfterForwarding = await getEthBalance(wallet);
+        balanceAfterForwarding.should.be.bignumber.equal(balanceBeforeForwarding.minus(txFee));
+      })
+
+      it('reverts on token withdrawal by beneficiary after finalization', async function () {
+        await crowdsale.finalize().should.be.fulfilled;
+        await crowdsale.withdrawTokens({ from: beneficiary }).should.be.rejectedWith(/revert/);
+      });
+    });
+
+    context('when sale is closed with softcap reach', async function () {
+      beforeEach(async function () {
+        // purchase tokens upto soft cap
+        value = crowdsaleSoftCap;
+        expectedTokenBalance = value.mul(rate);
+        await crowdsale.sendTransaction({ value, from: beneficiary }).should.be.fulfilled;
+        // make sale close
+        await increaseTimeTo(afterClosingTime);
+      });
+
+      it('lets beneficiary withdraw tokens', async function () {
+        await crowdsale.finalize().should.be.fulfilled;
+        await crowdsale.withdrawTokens({ from: beneficiary }).should.be.fulfilled;
+        const tokenBalance = await token.balanceOf(beneficiary);
+        tokenBalance.should.be.bignumber.equal(expectedTokenBalance);
+      });
+
+      it('forwards funds to wallet', async function () {
+        const balanceBeforeForwarding = await getEthBalance(wallet);
+        const result = await crowdsale.finalize().should.be.fulfilled;
+        const txFee = await getTxFee(result);
+        const balanceAfterForwarding = await getEthBalance(wallet);
+        balanceAfterForwarding.should.be.bignumber.equal(balanceBeforeForwarding.plus(value).minus(txFee));
+      });
+
+      it('reverts on refund by beneficiary', async function () {
+        await crowdsale.claimRefund({ from: beneficiary }).should.be.rejectedWith(/revert/);
+      });
     });
   });
 
