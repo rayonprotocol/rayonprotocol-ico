@@ -11,14 +11,12 @@ import "openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol"
 contract PausableTimedCrowdsale is Pausable, TimedCrowdsale {
     using SafeMath for uint256;
     
-    event IncreaseTotalPausedDuration(uint256 pausedDuration);
+    event LogExtendClosingTime(uint256 pausedDuration, uint256 newClosingTime); 
 
-    uint256 public totalPausedDuration = 0;
     uint256 public pausedTime = 0;
 
     modifier onlyWhileOpen {
-        uint256 blockTime = getTimestamp();
-        require(blockTime >= openingTime && blockTime <= closingTime.add(totalPausedDuration));
+        require(block.timestamp >= openingTime && !hasClosed());
         _;
     }
     
@@ -26,36 +24,27 @@ contract PausableTimedCrowdsale is Pausable, TimedCrowdsale {
      * @dev Extend parent behavior setting time when get paused
      */
     function pause() onlyWhileOpen public {
-        super.pause();
-        pausedTime = getTimestamp();
+        super.pause(); // onlyOwner whenNotPaused
+        pausedTime = block.timestamp;
     }
 
     /**
-     * @dev Extend parent behavior increasing totalPausedDuration when get unpaused
+     * @dev Extend parent behavior extending closingTIme when get unpaused
      */
     function unpause() public {
-        super.unpause();
-        _increaseTotalPausedDuration();
-    }
-
-    function _increaseTotalPausedDuration() internal returns (bool) {
-        uint256 pausedDuration = getTimestamp().sub(pausedTime);
+        super.unpause(); // onlyOwner whenPaused
+        uint256 pausedDuration = block.timestamp.sub(pausedTime);
         pausedTime = 0;
-        totalPausedDuration = totalPausedDuration.add(pausedDuration);
-        emit IncreaseTotalPausedDuration(pausedDuration);
-        return true;
-    }
-
-    function getTimestamp() internal view returns (uint256) {
-        return block.timestamp;
+        closingTime = closingTime.add(pausedDuration);
+        emit LogExtendClosingTime(pausedDuration, closingTime);
     }
 
     /*
-     * @dev Checks whether the period including totalPausedDuration in which the crowdsale is open has already elapsed.
+     * @dev Extend parent behavior with pause as not closed
      * @return Whether crowdsale period has elapsed
      */
     function hasClosed() public view returns (bool) {
-        return getTimestamp() > closingTime.add(totalPausedDuration);
+        return !paused && super.hasClosed();
     }
 
     /**
@@ -63,14 +52,7 @@ contract PausableTimedCrowdsale is Pausable, TimedCrowdsale {
      * @param _beneficiary Token purchaser
      * @param _weiAmount Amount of wei contributed
      */
-    function _preValidatePurchase(
-        address _beneficiary,
-        uint256 _weiAmount
-    )
-        internal
-        onlyWhileOpen
-        whenNotPaused
-    {
+    function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal onlyWhileOpen whenNotPaused {
         super._preValidatePurchase(_beneficiary, _weiAmount);
     }
 

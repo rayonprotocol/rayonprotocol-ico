@@ -1,7 +1,5 @@
 require('dotenv').config();
-require('babel-register')({
-  ignore: /node_modules\/(?!openzeppelin-solidity\/test\/helpers)/
-});
+require('babel-register')();
 require('babel-polyfill');
 
 const HDWalletProvider = require('truffle-hdwallet-provider');

@@ -16,31 +16,33 @@ contract('IndividuallyPausableToken', function (accounts) {
   const initialBalance = new BigNumber(10).pow(18);
   const transferValue = initialBalance.dividedBy(4);
 
+  let token;
+  
   beforeEach(async function () {
-    this.token = await IndividuallyPausableToken.new({ from: owner });
+    token = await IndividuallyPausableToken.new({ from: owner });
   });
 
   describe('individual pause', async function () {
     context('when the sender is the token owner', async function () {
       it('pause an address', async function () {
-        await this.token.pauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;
-        this.token.isPausedAddress(anotherNonOwner).should.eventually.be.true;
+        await token.pauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;
+        token.isPausedAddress(anotherNonOwner).should.eventually.be.true;
       });
 
       it('can not pause an address that already has been paused', async function () {
-        await this.token.pauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;
-        await this.token.pauseAddress(anotherNonOwner, { from: owner }).should.be.rejectedWith(/revert/);
+        await token.pauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;
+        await token.pauseAddress(anotherNonOwner, { from: owner }).should.be.rejectedWith(/revert/);
       });
 
       it('emits PauseAddress event', async function () {
-        const [event] = await eventsIn(this.token.pauseAddress(anotherNonOwner, { from: owner }));
-        event.should.be.equal('PauseAddress');
+        const [event] = await eventsIn(token.pauseAddress(anotherNonOwner, { from: owner }));
+        event.should.be.equal('LogPauseAddress');
       });
     });
 
     context('when the sender is not the token owner', async function () {
       it('reverts', async function () {
-        await this.token.pauseAddress(anotherNonOwner, { from: nonOwner })
+        await token.pauseAddress(anotherNonOwner, { from: nonOwner })
           .should.be.rejectedWith(/revert/);
       });
     });
@@ -49,75 +51,31 @@ contract('IndividuallyPausableToken', function (accounts) {
 
   describe('individual unpause', async function () {
     beforeEach(async function () {
-      await this.token.pauseAddress(anotherNonOwner, { from: owner });
+      await token.pauseAddress(anotherNonOwner, { from: owner });
     });
 
     context('when the sender is the token owner', async function () {
       it('unpause an address', async function () {
-        await this.token.unpauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;;
-        this.token.isPausedAddress(anotherNonOwner).should.eventually.be.false;
+        await token.unpauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;;
+        token.isPausedAddress(anotherNonOwner).should.eventually.be.false;
       });
 
       it('can not unpause an address that already has been unpaused', async function () {
-        await this.token.unpauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;
-        await this.token.unpauseAddress(anotherNonOwner, { from: owner }).should.be.rejectedWith(/revert/);
+        await token.unpauseAddress(anotherNonOwner, { from: owner }).should.be.fulfilled;
+        await token.unpauseAddress(anotherNonOwner, { from: owner }).should.be.rejectedWith(/revert/);
       });
 
       it('emits UnpauseAddress event', async function () {
-        const [event] = await eventsIn(this.token.unpauseAddress(anotherNonOwner, { from: owner }))
-        event.should.be.equal('UnpauseAddress');
+        const [event] = await eventsIn(token.unpauseAddress(anotherNonOwner, { from: owner }))
+        event.should.be.equal('LogUnpauseAddress');
       });
 
     });
 
     context('when the sender is not the token owner', async function () {
       it('reverts', async function () {
-        await this.token.unpauseAddress(anotherNonOwner, { from: nonOwner })
+        await token.unpauseAddress(anotherNonOwner, { from: nonOwner })
           .should.be.rejectedWith(/revert/);
-      });
-    });
-  });
-
-  describe('enabling individual pause', async function () {
-    context('when the sender is the token owner', async function () {
-      it('individual pause', async function () {
-        await this.token.enableIndividualPause({ from: owner }).should.be.fulfilled;
-        this.token.individualPauseEnabled().should.eventually.be.true;
-      });
-
-      it('emits EnableIndividualPause event', async function () {
-        const [event] = await eventsIn(this.token.enableIndividualPause({ from: owner }));
-        event.should.be.equal('EnableIndividualPause');
-      });
-    });
-
-    context('when the sender is not the token owner', async function () {
-      it('reverts', async function () {
-        await this.token.enableIndividualPause({ from: nonOwner }).should.be.rejectedWith(/revert/);
-      });
-    });
-  });
-
-  describe('disabling individual pause', async function () {
-    beforeEach(async function () {
-      await this.token.enableIndividualPause({ from: owner });
-    });
-
-    context('when the sender is the token owner', async function () {
-      it('disables individual pause', async function () {
-        await this.token.disableIndividualPause({ from: owner }).should.be.fulfilled;
-        this.token.individualPauseEnabled().should.eventually.be.false;
-      });
-
-      it('emits DisableIndividualPause event', async function () {
-        const [event] = await eventsIn(this.token.disableIndividualPause({ from: owner }));
-        event.should.be.equal('DisableIndividualPause');
-      });
-    });
-
-    context('when the sender is not the token owner', async function () {
-      it('reverts', async function () {
-        await this.token.disableIndividualPause({ from: nonOwner }).should.be.rejectedWith(/revert/);
       });
     });
   });
@@ -126,18 +84,18 @@ contract('IndividuallyPausableToken', function (accounts) {
   describe('individually pausable token', async function () {
     describe('pausedAddresses', function () {
       it('is not paused by default', async function () {
-        this.token.pausedAddresses(anotherNonOwner).should.eventually.be.false;
+        token.pausedAddresses(anotherNonOwner).should.eventually.be.false;
       });
 
       it('pauses individually', async function () {
-        await this.token.pauseAddress(anotherNonOwner).should.be.fulfilled;
-        this.token.pausedAddresses(anotherNonOwner).should.eventually.be.true;
+        await token.pauseAddress(anotherNonOwner).should.be.fulfilled;
+        token.pausedAddresses(anotherNonOwner).should.eventually.be.true;
       });
 
       it('pauses individually after an address is individually paused and then unpaused', async function () {
-        await this.token.pauseAddress(anotherNonOwner).should.be.fulfilled;
-        await this.token.unpauseAddress(anotherNonOwner).should.be.fulfilled;
-        await this.token.pausedAddresses(anotherNonOwner).should.eventually.be.false;
+        await token.pauseAddress(anotherNonOwner).should.be.fulfilled;
+        await token.unpauseAddress(anotherNonOwner).should.be.fulfilled;
+        await token.pausedAddresses(anotherNonOwner).should.eventually.be.false;
       });
     });
 
@@ -146,75 +104,40 @@ contract('IndividuallyPausableToken', function (accounts) {
       const recipient = anotherNonOwner;
 
       beforeEach(async function () {
-        await this.token.mockAddBalance(sender, initialBalance, { from: owner });
-        await this.token.mockAddBalance(recipient, initialBalance, { from: owner });
+        await token.mockAddBalance(sender, initialBalance, { from: owner });
+        await token.mockAddBalance(recipient, initialBalance, { from: owner });
       });
 
-      context('when token is individual pause enabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-        });
+      it('allows to transfer when an adderss is unpaused', async function () {
+        await token.transfer(recipient, transferValue, { from: sender });
 
-        it('allows to transfer when an adderss is unpaused', async function () {
-          await this.token.transfer(recipient, transferValue, { from: sender });
+        const senderBalance = await token.balanceOf(sender);
+        senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
 
-          const senderBalance = await this.token.balanceOf(sender);
-          senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
-
-          const recipientBalance = await this.token.balanceOf(recipient);
-          recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
-        });
-
-        it('reverts when trying to transfer and an adderss is paused', async function () {
-          await this.token.pauseAddress(sender).should.be.fulfilled;
-          await this.token.transfer(recipient, transferValue, { from: sender }).should.be.rejectedWith(/revert/);
-        });
-
-        it('allows to recieve when an adderss is unpaused', async function () {
-          await this.token.pauseAddress(recipient).should.be.fulfilled;
-          await this.token.unpauseAddress(recipient).should.be.fulfilled;
-          await this.token.transfer(recipient, transferValue, { from: sender });
-
-          const senderBalance = await this.token.balanceOf(sender);
-          senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
-
-          const recipientBalance = await this.token.balanceOf(recipient);
-          recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
-        });
-
-        it('reverts when trying to recieve and an adderss is paused', async function () {
-          await this.token.pauseAddress(recipient).should.be.fulfilled;
-          await this.token.transfer(recipient, transferValue, { from: sender }).should.be.rejectedWith(/revert/);;
-        });
+        const recipientBalance = await token.balanceOf(recipient);
+        recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
       });
 
-      context('when token is individual pause disabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-          await this.token.disableIndividualPause({ from: owner });
-        });
+      it('reverts when trying to transfer and an adderss is paused', async function () {
+        await token.pauseAddress(sender).should.be.fulfilled;
+        await token.transfer(recipient, transferValue, { from: sender }).should.be.rejectedWith(/revert/);
+      });
 
-        it('allows to transfer when an adderss is unpaused', async function () {
-          await this.token.transfer(recipient, transferValue, { from: sender });
+      it('allows to recieve when an adderss is unpaused', async function () {
+        await token.pauseAddress(recipient).should.be.fulfilled;
+        await token.unpauseAddress(recipient).should.be.fulfilled;
+        await token.transfer(recipient, transferValue, { from: sender });
 
-          const senderBalance = await this.token.balanceOf(sender);
-          senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
+        const senderBalance = await token.balanceOf(sender);
+        senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
 
-          const recipientBalance = await this.token.balanceOf(recipient);
-          recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
-        });
+        const recipientBalance = await token.balanceOf(recipient);
+        recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
+      });
 
-        it('allows to transfer when both sender and recipient are paused', async function () {
-          await this.token.pauseAddress(sender).should.be.fulfilled;
-          await this.token.pauseAddress(recipient).should.be.fulfilled;
-          await this.token.transfer(recipient, transferValue, { from: sender });
-
-          const senderBalance = await this.token.balanceOf(sender);
-          senderBalance.should.be.bignumber.equal(initialBalance.minus(transferValue));
-
-          const recipientBalance = await this.token.balanceOf(recipient);
-          recipientBalance.should.be.bignumber.equal(initialBalance.plus(transferValue));
-        });
+      it('reverts when trying to recieve and an adderss is paused', async function () {
+        await token.pauseAddress(recipient).should.be.fulfilled;
+        await token.transfer(recipient, transferValue, { from: sender }).should.be.rejectedWith(/revert/);;
       });
     });
 
@@ -224,52 +147,25 @@ contract('IndividuallyPausableToken', function (accounts) {
       const allowance = transferValue;
 
       beforeEach(async function () {
-        await this.token.mockAddBalance(approver, initialBalance, { from: owner });
-        await this.token.mockAddBalance(spender, initialBalance, { from: owner });
+        await token.mockAddBalance(approver, initialBalance, { from: owner });
+        await token.mockAddBalance(spender, initialBalance, { from: owner });
       });
 
-      context('when token is individual pause enabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-        });
-
-        it('allows to approve when an adderss is unpaused', async function () {
-          await this.token.approve(spender, allowance, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance);
-        });
-
-        it('reverts when trying to approve both approver and spender are paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.approve(spender, allowance, { from: approver }).should.be.rejectedWith(/revert/);
-        });
-
-        it('reverts when trying to get approved and an adderss is paused', async function () {
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.approve(spender, allowance, { from: approver }).should.be.rejectedWith(/revert/);
-        });
+      it('allows to approve when an adderss is unpaused', async function () {
+        await token.approve(spender, allowance, { from: approver });
+        const spenderAllowance = await token.allowance(approver, spender);
+        spenderAllowance.should.be.bignumber.equal(allowance);
       });
 
-      context('when token is individual pause disabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-          await this.token.disableIndividualPause({ from: owner });
-        });
+      it('reverts when trying to approve both approver and spender are paused', async function () {
+        await token.pauseAddress(approver).should.be.fulfilled;
+        await token.pauseAddress(spender).should.be.fulfilled;
+        await token.approve(spender, allowance, { from: approver }).should.be.rejectedWith(/revert/);
+      });
 
-        it('allows to approve when an adderss is unpaused', async function () {
-          await this.token.approve(spender, allowance, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance);
-        });
-
-        it('allows to approve when an both approver and spender are paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.approve(spender, allowance, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance);
-        });
+      it('reverts when trying to get approved and an adderss is paused', async function () {
+        await token.pauseAddress(spender).should.be.fulfilled;
+        await token.approve(spender, allowance, { from: approver }).should.be.rejectedWith(/revert/);
       });
     });
 
@@ -280,69 +176,38 @@ contract('IndividuallyPausableToken', function (accounts) {
       const allowance = transferValue;
 
       beforeEach(async function () {
-        await this.token.mockAddBalance(recipient, initialBalance, { from: owner });
-        await this.token.mockAddBalance(approver, initialBalance, { from: owner });
-        await this.token.mockAddBalance(spender, initialBalance, { from: owner });
-        await this.token.approve(spender, allowance, { from: approver });
+        await token.mockAddBalance(recipient, initialBalance, { from: owner });
+        await token.mockAddBalance(approver, initialBalance, { from: owner });
+        await token.mockAddBalance(spender, initialBalance, { from: owner });
+        await token.approve(spender, allowance, { from: approver });
       });
 
-      context('when token is individual pause enabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-        });
 
-        it('allows to transfer from when an adderss is unpaused', async function () {
-          await this.token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.fulfilled;
-          const approverBalance = await this.token.balanceOf(approver);
-          approverBalance.should.be.bignumber.equal(initialBalance.minus(allowance));
+      it('allows to transfer from when an adderss is unpaused', async function () {
+        await token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.fulfilled;
+        const approverBalance = await token.balanceOf(approver);
+        approverBalance.should.be.bignumber.equal(initialBalance.minus(allowance));
 
-          const recipientBalance = await this.token.balanceOf(recipient);
-          recipientBalance.should.be.bignumber.equal(initialBalance.plus(allowance));
-        });
-
-        it('reverts when trying to transfer from and approver is paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.rejectedWith(/revert/);
-        });
-
-        it('reverts when trying to transfer from and spender is paused', async function () {
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.rejectedWith(/revert/);
-        });
-
-        it('reverts when trying to recieved from and recipient is paused', async function () {
-          await this.token.pauseAddress(recipient).should.be.fulfilled;
-          await this.token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.rejectedWith(/revert/);
-        });
+        const recipientBalance = await token.balanceOf(recipient);
+        recipientBalance.should.be.bignumber.equal(initialBalance.plus(allowance));
       });
 
-      context('when token is individual pause disabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-          await this.token.disableIndividualPause({ from: owner });
-        });
-
-        it('allows to transfer from when an adderss is unpaused', async function () {
-          await this.token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.fulfilled;
-          const approverBalance = await this.token.balanceOf(approver);
-          approverBalance.should.be.bignumber.equal(initialBalance.minus(allowance));
-
-          const recipientBalance = await this.token.balanceOf(recipient);
-          recipientBalance.should.be.bignumber.equal(initialBalance.plus(allowance));
-        });
-
-        it('allows to transfer from when approver and spender and recipient are paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.pauseAddress(recipient).should.be.fulfilled;
-          await this.token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.fulfilled;
-          const approverBalance = await this.token.balanceOf(approver);
-          approverBalance.should.be.bignumber.equal(initialBalance.minus(allowance));
-
-          const recipientBalance = await this.token.balanceOf(recipient);
-          recipientBalance.should.be.bignumber.equal(initialBalance.plus(allowance));
-        });
+      it('reverts when trying to transfer from and approver is paused', async function () {
+        await token.pauseAddress(approver).should.be.fulfilled;
+        await token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.rejectedWith(/revert/);
       });
+
+      it('reverts when trying to transfer from and spender is paused', async function () {
+        await token.pauseAddress(spender).should.be.fulfilled;
+        await token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.rejectedWith(/revert/);
+      });
+
+      it('reverts when trying to recieved from and recipient is paused', async function () {
+        await token.pauseAddress(recipient).should.be.fulfilled;
+        await token.transferFrom(approver, recipient, allowance, { from: spender }).should.be.rejectedWith(/revert/);
+      });
+
+
     });
 
     describe('decrease approval', function () {
@@ -352,54 +217,30 @@ contract('IndividuallyPausableToken', function (accounts) {
       const decreaseAmount = allowance.dividedBy(4);
 
       beforeEach(async function () {
-        await this.token.mockAddBalance(approver, initialBalance, { from: owner });
-        await this.token.mockAddBalance(spender, initialBalance, { from: owner });
-        await this.token.approve(spender, allowance, { from: approver });
+        await token.mockAddBalance(approver, initialBalance, { from: owner });
+        await token.mockAddBalance(spender, initialBalance, { from: owner });
+        await token.approve(spender, allowance, { from: approver });
       });
 
-      context('when token is individual pause enabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-        });
 
-        it('allows to decrease apporval when an adderss is unpaused', async function () {
-          await this.token.decreaseApproval(spender, decreaseAmount, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance.minus(decreaseAmount));
-        });
 
-        it('reverts when trying to decrease apporval both approver and spender are paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.decreaseApproval(spender, decreaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
-        });
-
-        it('reverts when trying to get approved and an adderss is paused', async function () {
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.decreaseApproval(spender, decreaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
-        });
+      it('allows to decrease apporval when an adderss is unpaused', async function () {
+        await token.decreaseApproval(spender, decreaseAmount, { from: approver });
+        const spenderAllowance = await token.allowance(approver, spender);
+        spenderAllowance.should.be.bignumber.equal(allowance.minus(decreaseAmount));
       });
 
-      context('when token is individual pause disabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-          await this.token.disableIndividualPause({ from: owner });
-        });
-
-        it('allows to decrease when an adderss is unpaused', async function () {
-          await this.token.decreaseApproval(spender, decreaseAmount, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance.minus(decreaseAmount));
-        });
-
-        it('allows to decrease when an both approver and spender are paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.decreaseApproval(spender, decreaseAmount, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance.minus(decreaseAmount));
-        });
+      it('reverts when trying to decrease apporval both approver and spender are paused', async function () {
+        await token.pauseAddress(approver).should.be.fulfilled;
+        await token.pauseAddress(spender).should.be.fulfilled;
+        await token.decreaseApproval(spender, decreaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
       });
+
+      it('reverts when trying to get approved and an adderss is paused', async function () {
+        await token.pauseAddress(spender).should.be.fulfilled;
+        await token.decreaseApproval(spender, decreaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
+      });
+
     });
 
     describe('increase approval', function () {
@@ -409,54 +250,29 @@ contract('IndividuallyPausableToken', function (accounts) {
       const increaseAmount = allowance.dividedBy(4);
 
       beforeEach(async function () {
-        await this.token.mockAddBalance(approver, initialBalance, { from: owner });
-        await this.token.mockAddBalance(spender, initialBalance, { from: owner });
-        await this.token.approve(spender, allowance, { from: approver });
+        await token.mockAddBalance(approver, initialBalance, { from: owner });
+        await token.mockAddBalance(spender, initialBalance, { from: owner });
+        await token.approve(spender, allowance, { from: approver });
       });
 
-      context('when token is individual pause enabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-        });
 
-        it('allows to increase apporval when an adderss is unpaused', async function () {
-          await this.token.increaseApproval(spender, increaseAmount, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance.plus(increaseAmount));
-        });
 
-        it('reverts when trying to increase apporval both approver and spender are paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.increaseApproval(spender, increaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
-        });
-
-        it('reverts when trying to get approved and an adderss is paused', async function () {
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.increaseApproval(spender, increaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
-        });
+      it('allows to increase apporval when an adderss is unpaused', async function () {
+        await token.increaseApproval(spender, increaseAmount, { from: approver });
+        const spenderAllowance = await token.allowance(approver, spender);
+        spenderAllowance.should.be.bignumber.equal(allowance.plus(increaseAmount));
       });
 
-      context('when token is individual pause disabled', async function () {
-        beforeEach(async function () {
-          await this.token.enableIndividualPause({ from: owner });
-          await this.token.disableIndividualPause({ from: owner });
-        });
+      it('reverts when trying to increase apporval both approver and spender are paused', async function () {
+        await token.pauseAddress(approver).should.be.fulfilled;
+        await token.pauseAddress(spender).should.be.fulfilled;
+        await token.increaseApproval(spender, increaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
+      });
 
-        it('allows to increase when an adderss is unpaused', async function () {
-          await this.token.increaseApproval(spender, increaseAmount, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance.plus(increaseAmount));
-        });
-
-        it('allows to increase when an both approver and spender are paused', async function () {
-          await this.token.pauseAddress(approver).should.be.fulfilled;
-          await this.token.pauseAddress(spender).should.be.fulfilled;
-          await this.token.increaseApproval(spender, increaseAmount, { from: approver });
-          const spenderAllowance = await this.token.allowance(approver, spender);
-          spenderAllowance.should.be.bignumber.equal(allowance.plus(increaseAmount));
-        });
+      it('reverts when trying to get approved and an adderss is paused', async function () {
+        await token.pauseAddress(spender).should.be.fulfilled;
+        await token.increaseApproval(spender, increaseAmount, { from: approver }).should.be.rejectedWith(/revert/);
       });
     });
-  })
+  });
 });

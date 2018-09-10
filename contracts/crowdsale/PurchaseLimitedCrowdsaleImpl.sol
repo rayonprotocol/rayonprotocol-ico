@@ -3,7 +3,7 @@ pragma solidity ^0.4.23;
 import "../crowdsale/PurchaseLimitedCrowdsale.sol";
 
 
-contract PurchaseLimitedCrowdsaleMock is PurchaseLimitedCrowdsale {
+contract PurchaseLimitedCrowdsaleImpl is PurchaseLimitedCrowdsale {
     constructor (
         uint256 _minimumLimit,
         uint256 _maximumLimit,
