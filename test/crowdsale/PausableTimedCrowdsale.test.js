@@ -20,7 +20,7 @@ contract('PausableTimedCrowdsale', function (accounts) {
   const rate = 500;
   const wallet = owner;
   const tokenSupply = new BigNumber('1e25');
-  const value = ether(1);
+  const oneether = ether(1);
 
   let crowdsale;
   let openingTime;
@@ -58,26 +58,40 @@ contract('PausableTimedCrowdsale', function (accounts) {
     await token.mint(crowdsale.address, tokenSupply);
   });
 
-  describe('SALE PAUSE', async function () {
+  describe('1. SALE PAUSE', async function () {
 
-    context('when sale is not opened yet', async function () {
+    context('1.1 when sale is not opened yet', async function () {
       it('can not pause', async function () {
         await crowdsale.pause().should.be.rejectedWith(/revert/);
       });
+
+      it('can not unpause', async function () {
+        await crowdsale.unpause().should.be.rejectedWith(/revert/);
+      });
+
+      it('hasClosed is false', async function () {
+        crowdsale.hasClosed().should.eventually.be.false;
+      });
     })
 
-    context('when  sale is opened', async function () {
+    context('1.2 when sale is opened', async function () {
       beforeEach(async function () {
         // make sale opened
         await increaseTimeTo(afterOpeningTime);
       });
 
-      it('pauses crowdsale', async function () {
+      it('can pause crowdsale', async function () {
         await crowdsale.pause().should.be.fulfilled;
         crowdsale.paused().should.eventually.be.true;
       });
 
-      it('sets paused time', async function () {
+      it('can not pause crowdsale that already has been paused', async function () {
+        await crowdsale.pause().should.be.fulfilled;
+        // try pause after pause;
+        await crowdsale.pause().should.be.rejectedWith(/revert/);
+      });
+
+      it('pausedTime must be same with the blocktime when paused', async function () {
         // pausedTime must be 0 before pause
         const pausedTimeBeforePause = await crowdsale.pausedTime();
         pausedTimeBeforePause.should.be.bignumber.equal(0);
@@ -85,44 +99,65 @@ contract('PausableTimedCrowdsale', function (accounts) {
         await crowdsale.pause().should.be.fulfilled;
         const blockTimeWhenPaused = await latestTime();
 
+        await increaseTimeTo(blockTimeWhenPaused + 100);
         // pausedTime must be same with the block time when paused
         const pausedTimeAfterPause = await crowdsale.pausedTime();
         pausedTimeAfterPause.should.be.bignumber.equal(blockTimeWhenPaused);
       });
 
-      it('can not unpause crowdsale that already has been paused', async function () {
-        await crowdsale.pause();
-        // try pause after pause;
-        await crowdsale.pause().should.be.rejectedWith(/revert/);
+      it('must not be closed while paused', async function () {
+        await crowdsale.pause().should.be.fulfilled;
+        await increaseTimeTo(afterClosingTime);
+        crowdsale.hasClosed().should.eventually.be.false;
       });
 
-      it('reverts pause by non-owner', async function () {
+      it('can not pause by non-owner', async function () {
         await crowdsale.pause({ from: nonOwner }).should.be.rejectedWith(/revert/);
+        await crowdsale.pause().should.be.fulfilled;
       });
     });
   });
 
-  describe('SALE UNPAUSE', async function () {
-    context('when sale is paused', async function () {
+  describe('2. SALE UNPAUSE', async function () {
+    context('2.1 when sale is not open', async function () {
+      it('can not unpause', async function () {
+        await crowdsale.paused().should.eventually.be.false;
+        await crowdsale.unpause().should.be.rejectedWith(/revert/);
+      });
+    });
+
+    context('2.2 when sale is not paused', async function () {
+      beforeEach(async function () {
+        await increaseTimeTo(afterOpeningTime);
+      });
+
+      it('can not unpause when not paused', async function () {
+        await crowdsale.paused().should.eventually.be.false;
+        await crowdsale.unpause().should.be.rejectedWith(/revert/);
+        await crowdsale.pause().should.be.fulfilled;
+      });
+    });
+
+    context('2.3 when sale is paused', async function () {
       beforeEach(async function () {
         await increaseTimeTo(afterOpeningTime);
         await crowdsale.pause();
       });
 
-      it('unpauses crowdsale', async function () {
+      it('can unpause', async function () {
+        await crowdsale.paused().should.eventually.be.true;
         await crowdsale.unpause().should.be.fulfilled;
-        const paused = await crowdsale.paused();
-        paused.should.be.false;
+        crowdsale.paused().should.eventually.be.false;
       });
 
-      it('unpauses crowdsale after currently-set closingTime is passed', async function () {
+      it('unpauses after currently-set closingTime is passed', async function () {
         const closingTime = await crowdsale.closingTime();
         await increaseTimeTo(closingTime.add(duration.seconds(1))); // currently-set closingTime is passed
 
         await crowdsale.unpause().should.be.fulfilled;
       });
 
-      it('can not unpause crowdsale after unpaused', async function () {
+      it('can not unpause after unpaused', async function () {
         await crowdsale.unpause().should.be.fulfilled;
         await crowdsale.unpause().should.be.rejectedWith(/revert/);
       });
@@ -131,13 +166,13 @@ contract('PausableTimedCrowdsale', function (accounts) {
         let accumulatedDuration = new BigNumber(0);
         const pausingDuration = duration.hours(20);
         const closingTimeBeforePauses = await crowdsale.closingTime();
-        const count = 10;
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < 10; i++) {
           await pauseFor(pausingDuration);
+          await advanceBlock();
           accumulatedDuration = accumulatedDuration.plus(pausingDuration);
         }
         const extendedClosingTime = await crowdsale.closingTime();
-        assertTimeWithinTolerance(extendedClosingTime, closingTimeBeforePauses.plus(accumulatedDuration));
+        assertTimeWithinTolerance(extendedClosingTime, closingTimeBeforePauses.plus(accumulatedDuration), 5);
       });
 
       it('emits LogExtendClosingTime event', async function () {
@@ -148,91 +183,100 @@ contract('PausableTimedCrowdsale', function (accounts) {
         const [, secondLog] = logs;
         secondLog.event.should.be.equal('LogExtendClosingTime');
         const pausedDuration = secondLog.args.pausedDuration;
-        assertTimeWithinTolerance(pausedDuration, pausingDuration);
+        assertTimeWithinTolerance(pausedDuration, pausingDuration); 
+
+        // check if the newClosingTime attached in the event is same with the closingTime()
+        const closingTime = await crowdsale.closingTime();
+        assertTimeWithinTolerance(closingTime, secondLog.args.newClosingTime);
       });
 
-      it('reverts unpause by non-owner', async function () {
+      it('can not unpause by non-owner', async function () {
         await crowdsale.unpause({ from: nonOwner }).should.be.rejectedWith(/revert/);
-      });
-    });
-
-    context('when sale is not paused', async function () {
-      it('can not unpause when crowdsale is not paused', async function () {
-        await crowdsale.unpause().should.be.rejectedWith(/revert/);
+        await crowdsale.unpause().should.be.fulfilled;
       });
     });
   });
 
-  describe('sale closing', async function () {
+  describe('3. SALE CLOSING', async function () {
     beforeEach(async function () {
       await increaseTimeTo(afterOpeningTime);
     });
 
-    it('checks sale close when it has never been paused and unpaused', async function () {
+    it('sale must get closed when it has never been paused and unpaused', async function () {
       await increaseTimeTo(afterClosingTime);
-      const closed = await crowdsale.hasClosed();
-      closed.should.be.true;
+      crowdsale.hasClosed().should.eventually.be.true;
     });
 
-    it('check sale close when in paused and closingTime is passed', async function() {
+    it('sale must not get closed when paused and closingTime is passed', async function () {
       await crowdsale.pause();
-      const closingTime = await crowdsale.closingTime();
-      const pausingDuration = duration.minutes(60);
-      await increaseTimeTo(closingTime.plus(pausingDuration)); // crowdsale is still in paused and closingTime is passed
-      const closed = await crowdsale.hasClosed();
-      
-      closed.should.be.false;
+      const originalClosingTime = await crowdsale.closingTime();
+      await increaseTimeTo(originalClosingTime); // crowdsale is still in paused and closingTime is passed
+      crowdsale.hasClosed().should.eventually.be.false;
     });
 
-    it('checks sale close when it has been paused and unpaused', async function () {
+    it('sale must get closed when it has been paused and unpaused and the new closingTime is passed', async function () {
       const pausingDuration = duration.minutes(60);
       await pauseFor(pausingDuration);
 
       // initial closingTime is passed
       await increaseTimeTo(afterClosingTime);
-      const closed = await crowdsale.hasClosed();
-      closed.should.be.false;
+      await crowdsale.hasClosed().should.eventually.be.false;
 
       // extended closingTime is passed
       await increaseTimeTo(afterClosingTime + pausingDuration);
-      const closedAfterDuration = await crowdsale.hasClosed();
-      closedAfterDuration.should.be.true;
+      crowdsale.hasClosed().should.eventually.be.true;
     });
   });
 
 
-  describe('accepting payments', function () {
+  describe('4. ACCEPTING PAYMENTS', function () {
     const [, purchaser, investor] = accounts;
 
-    it('should reject payments before sale open', async function () {
-      await crowdsale.send(value).should.be.rejectedWith(/revert/);
-      await crowdsale.buyTokens(investor, { from: purchaser, value: value }).should.be.rejectedWith(/revert/);
-    });
+    context('4.1 when sale is not opened yet', async function () {
+      it('should reject payments before sale open', async function () {
+        await crowdsale.send(oneether).should.be.rejectedWith(/revert/);
+        await crowdsale.buyTokens(investor, { from: purchaser, value: oneether }).should.be.rejectedWith(/revert/);
+      });
+    })
 
-    it('should accept payments after open', async function () {
-      await increaseTimeTo(afterOpeningTime);
-      await crowdsale.sendTransaction({ value }).should.be.fulfilled;
-      await crowdsale.buyTokens(investor, { value, from: investor }).should.be.fulfilled;
-    });
+    context('4.2 when sale is opened', async function () {
+      beforeEach(async function () {
+        // make sale opened
+        await increaseTimeTo(afterOpeningTime);
+      });
 
-    it('should reject payments when opened and being paused', async function () {
-      await increaseTimeTo(afterOpeningTime);
-      await crowdsale.pause();
-      await crowdsale.send(value).should.be.rejectedWith(/revert/);
-      await crowdsale.buyTokens(investor, { value: value, from: purchaser }).should.be.rejectedWith(/revert/);
-    });
+      it('should accept payments after open', async function () {
+        await crowdsale.sendTransaction({ value: oneether }).should.be.fulfilled;
+        await crowdsale.buyTokens(investor, { value: oneether, from: investor }).should.be.fulfilled;
+      });
 
-    it('should accept payments when opened and paused duration left', async function () {
-      await increaseTimeTo(afterOpeningTime);
-      const pausingDuration = duration.days(10);
-      await pauseFor(pausingDuration);
-      await crowdsale.send(value).should.be.fulfilled;
-      await crowdsale.buyTokens(investor, { value: value, from: purchaser }).should.be.fulfilled;
-    });
+      it('should reject payments when opened and being paused', async function () {
+        await crowdsale.pause().should.be.fulfilled;
+        await crowdsale.send(oneether).should.be.rejectedWith(/revert/);
+        await crowdsale.buyTokens(investor, { value: oneether, from: purchaser }).should.be.rejectedWith(/revert/);
+      });
 
-    it('should reject payments when ended', async function () {
-      await crowdsale.send(value).should.be.rejectedWith(/revert/);
-      await crowdsale.buyTokens(investor, { value: value, from: purchaser }).should.be.rejectedWith(/revert/);
+      it('should accept payments when opened and paused duration left', async function () {
+        const pausingDuration = duration.days(10);
+        await pauseFor(pausingDuration);
+        await crowdsale.send(oneether).should.be.fulfilled;
+        await crowdsale.buyTokens(investor, { value: oneether, from: purchaser }).should.be.fulfilled;
+      });
+
+      it('should reject payments when ended', async function () {
+        await increaseTimeTo(afterClosingTime);
+        await crowdsale.send(oneether).should.be.rejectedWith(/revert/);
+        await crowdsale.buyTokens(investor, { value: oneether, from: purchaser }).should.be.rejectedWith(/revert/);
+      });
+
+      it('should reject payments when opened and paused and newClosingTime is passed', async function () {
+        const pausingDuration = duration.days(10);
+        await pauseFor(pausingDuration);
+        await increaseTimeTo(afterClosingTime + pausingDuration);
+        await crowdsale.send(oneether).should.be.rejectedWith(/revert/);
+        await crowdsale.buyTokens(investor, { value: oneether, from: purchaser }).should.be.rejectedWith(/revert/);
+      });
+
     });
   });
 });

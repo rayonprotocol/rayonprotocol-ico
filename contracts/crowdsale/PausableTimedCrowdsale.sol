@@ -11,19 +11,19 @@ import "openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol"
 contract PausableTimedCrowdsale is Pausable, TimedCrowdsale {
     using SafeMath for uint256;
     
-    event LogExtendClosingTime(uint256 pausedDuration, uint256 extendedClosingTime); 
+    event LogExtendClosingTime(uint256 pausedDuration, uint256 newClosingTime); 
 
     uint256 public pausedTime = 0;
 
     modifier onlyWhileOpen {
-        require(block.timestamp >= openingTime && !hasClosed());  // REVIEW: better to reuse hasClosed()
+        require(block.timestamp >= openingTime && !hasClosed());
         _;
     }
     
     /**
      * @dev Extend parent behavior setting time when get paused
      */
-    function pause() onlyWhileOpen public { //REVIEW: MUST check if non-owner call fails   
+    function pause() onlyWhileOpen public {
         super.pause(); // onlyOwner whenNotPaused
         pausedTime = block.timestamp;
     }
