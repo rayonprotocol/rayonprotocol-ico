@@ -1,3 +1,5 @@
+import { ether } from '../../contracts/util/ether';
+
 const PurchaseLimitedCrowdsale = artifacts.require('PurchaseLimitedCrowdsaleImpl');
 const MintableToken = artifacts.require('MintableToken.sol');
 const BigNumber = web3.BigNumber;
@@ -6,8 +8,6 @@ require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .use(require('chai-as-promised'))
   .should();
-
-const ether = (n) => new BigNumber(web3.toWei(n, 'ether'));
 
 contract('PurchaseLimitedCrowdsale', function (accounts) {
   const [owner, purchaser1, purchaser2] = accounts;

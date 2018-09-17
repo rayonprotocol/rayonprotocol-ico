@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./PausableTimedCrowdsale.sol";
+import "../crowdsale/PausableTimedCrowdsale.sol";
 
 
 contract PausableTimedCrowdsaleImpl is PausableTimedCrowdsale {

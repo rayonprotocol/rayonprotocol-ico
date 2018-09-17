@@ -2,6 +2,7 @@ import { advanceBlock } from 'openzeppelin-solidity/test/helpers/advanceToBlock'
 import { increaseTimeTo, duration } from 'openzeppelin-solidity/test/helpers/increaseTime';
 import { latestTime } from 'openzeppelin-solidity/test/helpers/latestTime';
 import assertTimeWithinTolerance from '../util/assertTimeWithinTolerance';
+import { ether } from '../../contracts/util/ether';
 
 const PausableTimedCrowdsale = artifacts.require('PausableTimedCrowdsaleImpl');
 const MintableToken = artifacts.require('MintableToken.sol');
@@ -12,13 +13,10 @@ require('chai')
   .use(require('chai-as-promised'))
   .should();
 
-const ether = (n) => new BigNumber(web3.toWei(n, 'ether'));
-
 contract('PausableTimedCrowdsale', function (accounts) {
 
   const [owner, nonOwner] = accounts;
   const rate = 500;
-  const wallet = owner;
   const tokenSupply = new BigNumber('1e25');
   const oneether = ether(1);
 
@@ -51,9 +49,7 @@ contract('PausableTimedCrowdsale', function (accounts) {
     afterClosingTime = closingTime + duration.seconds(5);
     // Token and Crowdsale
     token = await MintableToken.new();
-    crowdsale = await PausableTimedCrowdsale.new(
-      openingTime, closingTime, rate, wallet, token.address,
-    );
+    crowdsale = await PausableTimedCrowdsale.new(openingTime, closingTime, rate, owner, token.address);
     // Mint as much as tokenSupply
     await token.mint(crowdsale.address, tokenSupply);
   });
