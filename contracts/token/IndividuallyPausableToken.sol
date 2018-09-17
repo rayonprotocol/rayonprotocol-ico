@@ -29,7 +29,7 @@ contract IndividuallyPausableToken is StandardToken, Ownable {
      * @dev set given address in pausedAddresses true
      */
     function pauseAddress(address _address) public onlyOwner {
-        require(!isPausedAddress(_address));
+        require(!pausedAddresses[_address]);
         pausedAddresses[_address] = true;
         emit LogPauseAddress(_address);
     }
@@ -39,16 +39,9 @@ contract IndividuallyPausableToken is StandardToken, Ownable {
      * @dev set given address in pausedAddresses false
      */
     function unpauseAddress(address _address) public onlyOwner {
-        require(isPausedAddress(_address));
+        require(pausedAddresses[_address]);
         pausedAddresses[_address] = false;
         emit LogUnpauseAddress(_address);
-    }
-
-    /**
-     * @dev returns if given address is paused
-     */
-    function isPausedAddress(address _address) public view returns(bool) {
-        return pausedAddresses[_address];
     }
 
     function transfer(
