@@ -1,6 +1,7 @@
 import { advanceBlock } from 'openzeppelin-solidity/test/helpers/advanceToBlock';
 import { increaseTimeTo, duration } from 'openzeppelin-solidity/test/helpers/increaseTime';
 import { latestTime } from 'openzeppelin-solidity/test/helpers/latestTime';
+import { ether, getEthBalance, getTxFee } from '../contracts/util/ether';
 
 const RayonToken = artifacts.require('RayonToken');
 const RayonTokenCrowdsale = artifacts.require('RayonTokenCrowdsale');
@@ -10,15 +11,6 @@ require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .use(require('chai-as-promised'))
   .should();
-
-const ether = (n) => new BigNumber(web3.toWei(n, 'ether'));
-const tokenToWei = n => (new BigNumber(10)).pow(18).times(n);
-
-const getEthBalance = (address) => web3.eth.getBalance(address);
-const getTxFee = async ({ tx, receipt }) => {
-  return (await web3.eth.getTransaction(tx).gasPrice).times(receipt.gasUsed);
-};
-
 
 contract('RayonTokenCrowdsale', function (accounts) {
   const [owner, beneficiary, newOwner, nonOwner, anotherNonOwner] = accounts;
